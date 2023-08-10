@@ -1,0 +1,19 @@
+ mkdir sslab
+ cd sslab
+ git --version
+ echo "This is a SS Lab repository" >> README.md
+ ls
+ git init
+ ls -a
+ cd .git
+ ls
+ cat config
+ git config --global user.name "G Sai Hemanth Kumar"
+ git config --global user.email "Sai.Hemanth@iiitb.ac.in"
+ git status
+ git add README.md
+ git commit -m "Added README file"
+ git log
+ git branch
+ git branch -m main
+ git remote add origin "git_link_of_our_repository"
