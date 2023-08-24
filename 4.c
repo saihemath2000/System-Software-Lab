@@ -1,13 +1,21 @@
 #include<stdio.h>
-#include<sys/stat.h>
-#include<sys/types.h>
 #include<unistd.h>
 #include<fcntl.h>
- int main(void){
-     int fd;
-     fd = open("program4",O_EXCL|O_RDWR,0744);
+
+ int main(int argc, char *argv[]){
+     if(argc!=2){
+       printf("Missing arguments");
+       return 1;
+     }
+     
+     //opening a file
+     int fd = open(argv[1],O_CREAT|O_EXCL,0644);
+     if(fd==-1){
+       perror("Error opening a file");
+       return 1;
+     }
+     
      printf("fd=%d",fd);
-     perror("fd returns:");
      close(fd);
      return 1;
  }
