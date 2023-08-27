@@ -11,7 +11,7 @@ int main(int argc, char* argv[]){
    }
    
    //opening a file
-   int fd = open(argv[1],O_RDWR|O_CREAT|O_APPEND,0644);
+   int fd = open(argv[1],O_RDWR|O_CREAT|O_APPEND|O_TRUNC,0644);
    if(fd==-1){
      perror("Error opening a file");
      return 1;

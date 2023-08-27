@@ -1,9 +1,8 @@
 // gcc 7.c -o name
 //curl ipaddress/filename
 // sudo python3 -m http.server 80
+
 #include<unistd.h>
-//#include<sys/types.h>
-//#include<sys/stat.h>
 #include<fcntl.h>
 #include<stdio.h>
 

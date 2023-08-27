@@ -11,7 +11,7 @@ int main(int argc, char* argv[]){
   struct flock lock;
   
   //opening a file
-  int fd = open(argv[1],O_CREAT|O_RDWR,0644);
+  int fd = open(argv[1],O_RDWR);
   if(fd==-1){
     perror("Error in opening the file");
     return 1;

@@ -5,6 +5,5 @@ int main(){
  while(1){
    i++;
  }
- return 1;
- 
+ return 1; 
 }
