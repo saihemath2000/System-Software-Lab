@@ -21,7 +21,7 @@ int main(){
       perror("Error opening the file");
       return 1;
     }
-    printf("\nBefore entering into the critical section");
+    printf("Before entering into the critical section\n");
     fcntl(fd,F_SETLKW,&lock);
     printf("\nInside the critical section");
     read(fd,&db,sizeof(db));

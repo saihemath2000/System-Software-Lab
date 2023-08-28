@@ -24,7 +24,7 @@ int main(int argc, char* argv[]){
   lock.l_len=0;
   lock.l_pid= getpid();
   
-  printf("\nBefore entering into critical section");
+  printf("Before entering into critical section\n");
   fcntl(fd,F_SETLKW,&lock);
   printf("\nInside the critical section");
   printf("\nPress enter to unlock");

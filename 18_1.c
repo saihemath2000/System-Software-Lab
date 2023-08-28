@@ -35,10 +35,10 @@ int main(){
     return 1;
   }
   
-  printf("\nBefore entering into the critical section");
+  printf("Before entering into the critical section\n");
   fcntl(fd,F_SETLKW,&lock);
-  printf("\nInside the critical section");
-  printf("\nCurrent ticket count is:%d",db.ticket_no);
+  printf("Inside the critical section\n");
+  printf("Current ticket count is:%d\n",db.ticket_no);
   db.ticket_no++;
   
   lseek(fd,-1*sizeof(db),SEEK_CUR);
@@ -53,11 +53,11 @@ int main(){
   lock.l_type= F_UNLCK;
   fcntl(fd,F_SETLK,&lock);
   
-  printf("\npress enter to book the ticket");
+  printf("press enter to book the ticket\n");
   getchar();
   getchar();
   
-  printf("\nBooked ticket no is:%d",db.ticket_no);
+  printf("Booked ticket no is:%d\n",db.ticket_no);
    
   int close_fd= close(fd);
   if(close_fd==-1){
