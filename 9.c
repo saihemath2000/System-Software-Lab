@@ -1,3 +1,25 @@
+/*
+============================================================================
+Name : 9.c
+Author : G.Sai Hemanth Kumar 
+Description : 
+             Write a program to print the following information about a given file.
+               a.inode
+               b.number of hard links
+               c.uid
+               d.gid
+               e.size
+               f.block size
+               g.number of blocks
+               h.time of last access
+               i.time of last modification
+               j.time of last change
+Date: 24th Aug, 2023.
+============================================================================
+*/
+
+
+
 #include<unistd.h>
 #include<sys/types.h>
 #include<stdio.h>
@@ -12,7 +34,7 @@ static void displaytypeinfo(const char *filename){
     }
     printf("File: %s\n", filename);
     printf("Inode number: %ld\n", (long)fileInfo.st_ino);
-    printf("Number of hard links: %ld\n", (long)fileInfo.st_nlink);
+    printf("Number of links: %ld\n", (long)fileInfo.st_nlink);
     printf("UID: %u\n", fileInfo.st_uid);
     printf("GID: %u\n", fileInfo.st_gid);
     printf("Size: %ld bytes\n", (long)fileInfo.st_size);

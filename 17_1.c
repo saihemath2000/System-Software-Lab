@@ -1,3 +1,16 @@
+/*
+============================================================================
+Name : 17_1.c
+Author : G.Sai Hemanth Kumar 
+Description : 
+           Write a program to simulate online ticket reservation. Implement write lock.
+           Write a separate program, to open the file, implement write lock, read the ticket number, increment the number and  print the new ticket number then close the file.
+
+Date: 27th Aug, 2023.
+============================================================================
+*/
+
+
 #include<unistd.h>
 #include<fcntl.h>
 #include<stdio.h>

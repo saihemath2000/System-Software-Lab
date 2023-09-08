@@ -1,3 +1,14 @@
+/*
+============================================================================
+Name : 18.c
+Author : G.Sai Hemanth Kumar 
+Description : 
+           Write a program to maintain records(database) for trains
+Date: 27th Aug, 2023.
+============================================================================
+*/
+
+
 #include<fcntl.h>
 #include<unistd.h>
 #include<stdio.h>

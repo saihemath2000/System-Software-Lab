@@ -1,3 +1,15 @@
+/*
+============================================================================
+Name : 18_1.c
+Author : G.Sai Hemanth Kumar 
+Description : 
+          Write a program to perform Record locking. Whenever you access a particular record, first lock it then modify/access
+          to avoid race condition.Implement write lock         
+Date: 27th Aug, 2023.
+============================================================================
+*/
+
+
 #include<stdio.h>
 #include<fcntl.h>
 #include<unistd.h>

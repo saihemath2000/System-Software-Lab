@@ -1,3 +1,19 @@
+/*
+============================================================================
+Name : 11.c
+Author : G.Sai Hemanth Kumar 
+Description : 
+           Write a program to open a file, duplicate the file descriptor and append the file with both the
+descriptors and check whether the file is updated properly or not.
+          a. use dup
+          b. use dup2
+          c. use fcntl             
+Date: 25th Aug, 2023.
+============================================================================
+*/
+
+
+
 #include<unistd.h>
 #include<fcntl.h>
 #include<stdio.h>
@@ -58,7 +74,7 @@ int main(int argc, char* argv[]){
    int new_fd3 = fcntl(fd,F_DUPFD,5);
    
    //appending data into the file using fcntl()
-   bytes = write(new_fd2,a,sizeof(a)-1);
+   bytes = write(new_fd3,a,sizeof(a)-1);
    if(bytes==-1){
      perror("Error appending data using fcntl() ");
      close(new_fd3);

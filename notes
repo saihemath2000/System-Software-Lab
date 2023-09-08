@@ -1,0 +1,36 @@
+Symbolic links (soft links) and hard links are both methods used in file systems to create references to files or directories.
+
+Symbolic links are like shortcuts or pointers to other files
+
+When you open "destSL" for writing and write data to it, the operating system sees that destSL is a symbolic link and resolves it to the path of the target file
+
+Hard Link is a pointer that points to the actual file in memory. So modifying the file via the link  pointer also reflects in the pointer that was used for creating the hard link and vice versa. 
+
+The  system  call  mknod() creates a filesystem node (file, device special file, or named pipe) named  pathname,  with  attributes specified by mode and dev.
+The mode argument specifies both the file  mode to use and the type of node to be created
+The  file type must be one of S_IFREG, S_IFCHR,S_IFBLK, S_IFIFO, or S_IFSOCK 
+
+File descriptors are used by an operating system to uniquely identify and manage open files or input/output (I/O) streams. It's a non-negative integer that the operating system assigns to each open file, socket, pipe, or other I/O resource that a process uses
+
+
+Stat Functions:
+These  functions  return  information about a file, in the buffer pointed to by statbuf.
+stat() and fstatat() retrieve information about the file pointed to by pathname
+lstat() is identical to stat(), except that if pathname is a symbolic link, then it returns  information about the link itself, not the file that the link refers to.
+fstat() is identical to stat(), except that the file about which information is to be retrieved is specified by the file descriptor fd.
+
+
+lseek()  repositions the file offset of the open file description associated with the file descriptor fd to the argument offset according to the directive whence as follows:
+      SEEK_SET
+              The file offset is set to offset bytes.
+
+       SEEK_CUR
+              The file offset is set to its current location plus offset bytes.
+
+       SEEK_END
+              The file offset is set to the size of the file plus offset bytes.  
+
+
+The dup() call takes oldfd, an open file descriptor, and returns a new descriptor that
+refers to the same open file description. The new descriptor is guaranteed to be the
+lowest unused file descriptor

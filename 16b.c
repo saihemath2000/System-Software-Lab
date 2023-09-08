@@ -1,3 +1,15 @@
+/*
+============================================================================
+Name : 16a.c
+Author : G.Sai Hemanth Kumar 
+Description : 
+           Write a program to perform mandatory locking.
+             b. Implement read lock
+Date: 25th Aug, 2023.
+============================================================================
+*/
+
+
 #include<fcntl.h>
 #include<unistd.h>
 #include<stdio.h>
