@@ -62,7 +62,7 @@ int main(int argc, char* argv[]){
     statlink = strcmp(argv[1],"-l")==0;
     if(statlink==0){
       if(lstat(argv[1],&sb)==-1)
-        printf("lstat");
+        perror("lstat");
     }else{
       if(stat(argv[1],&sb)==-1)
          perror("stat");

@@ -35,7 +35,7 @@ int main() {
     execv("/bin/ls",temp);
     
     printf("Using execvp:\n");
-    char *temp1[] = {"/bin/ls","ls","-Rl","NULL"};
+    char *temp1[] = {"/bin/ls","ls","-Rl",NULL};
     execvp("ls",temp1);
     
     return 0;
