@@ -26,13 +26,6 @@ bool login_handler(int user, int connFD, struct Student *ptrToCustomerID)
     bzero(readBuffer, sizeof(readBuffer));
     bzero(writeBuffer, sizeof(writeBuffer));
 
-    // Get login message for respective user type
-    // if (user==1)
-    //     strcpy(writeBuffer, ADMIN_LOGIN_WELCOME);
-    // else if(user==2)
-    //     strcpy(writeBuffer, CUSTOMER_LOGIN_WELCOME);
-
-    // Append the request for LOGIN ID message
     strcat(writeBuffer, "\n");
     strcat(writeBuffer, LOGIN_ID);
 
@@ -113,8 +106,6 @@ bool login_handler(int user, int connFD, struct Student *ptrToCustomerID)
             perror("Error writing PASSWORD message to client!");
             return false;
         }
-
-        bzero(readBuffer, sizeof(readBuffer));
         readBytes = read(connFD, readBuffer, sizeof(readBuffer));
         if (readBytes == 1)
         {

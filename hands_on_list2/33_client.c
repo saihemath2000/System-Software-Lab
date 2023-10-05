@@ -23,7 +23,7 @@ void main(){
 
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_family = AF_INET;
-    address.sin_port = htons(8080);
+    address.sin_port = htons(12345);
 
     connectStatus = connect(socketFileDescriptor, (struct sockaddr *)&address, sizeof(address));
     if (connectStatus == -1)
