@@ -10,6 +10,7 @@ int add_faculty(int connFD);
 int get_faculty_details(int connFD);
 int modify_student_info(int connFD);
 int modify_faculty_info(int connFD);
+int log_out(int connFD);
 int admin_operation_handler(int connFD)
 {
     if(login_handler(1,connFD,NULL))
@@ -64,9 +65,9 @@ int admin_operation_handler(int connFD)
             case 8:
                 modify_faculty_info(connFD);
                 break;
-            // case 9:
-            //     logout(connFD);
-            //     break;            
+            case 9:
+                log_out(connFD);
+                break;            
             default:
                 // writeBytes = write(connFD, ADMIN_LOGOUT, strlen(ADMIN_LOGOUT));
                 return 0;
@@ -81,7 +82,15 @@ int admin_operation_handler(int connFD)
     return 1;
 }
 
+int log_out(int connFD){
+    ssize_t readBytes, writeBytes;             // Number of bytes read from / written to the socket
+    char readBuffer[1000], writeBuffer[10000]; // A buffer for reading from / writing to the socket
+    char tempBuffer[1000];
+    write(connFD,LOG_OUT,strlen(LOG_OUT));
+    close(connFD);
+    return 0;
 
+}
 int get_student_details(int connFD)
 {
     ssize_t readBytes, writeBytes;             // Number of bytes read from / written to the socket
@@ -117,7 +126,6 @@ int get_student_details(int connFD)
             perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
             return false;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return 0;
     }
     int offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
@@ -132,7 +140,6 @@ int get_student_details(int connFD)
             perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
             return 0;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return 0;
     }
     else if (offset == -1)
@@ -170,8 +177,6 @@ int get_student_details(int connFD)
         perror("Error writing student info to client!");
         return false;
     }
-
-    // readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
     return true;
 }
 
@@ -210,7 +215,6 @@ int get_faculty_details(int connFD)
             perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
             return false;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return 0;
     }
     int offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
@@ -261,11 +265,9 @@ int get_faculty_details(int connFD)
     if (writeBytes == -1)
     {
         perror("Error writing faculty info to client!");
-        return false;
+        return 0;
     }
-
-    // readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-    return true;
+    return 1;
 }
 
 int add_student(int connFD)
@@ -419,8 +421,8 @@ int add_student(int connFD)
         perror("Error displaying login details");
         return 0;
     }
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     close(studentFileDescriptor);
-    // readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
     return newStudent.id;
 }
 
@@ -628,7 +630,6 @@ int modify_student_info(int connFD){
             perror("Error while writing student id doesnt exists message to client!");
             return false;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return false;
     }
     
@@ -644,7 +645,6 @@ int modify_student_info(int connFD){
             perror("Error while writing student id doesnt exists message to client!");
             return false;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return false;
     }
     else if (offset == -1)
@@ -700,7 +700,6 @@ int modify_student_info(int connFD){
             perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
             return false;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return false;
     }
 
@@ -747,7 +746,6 @@ int modify_student_info(int connFD){
                 perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
                 return false;
             }
-            readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
             return false;
         }
         student.age = updatedAge;
@@ -792,14 +790,13 @@ int modify_student_info(int connFD){
             perror("Error while writing INVALID_MENU_CHOICE message to client!");
             return false;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return false;
     }
 
     studentFileDescriptor = open(STUDENT_FILE, O_WRONLY);
     if (studentFileDescriptor == -1)
     {
-        perror("Error while opening customer file");
+        perror("Error while opening student file");
         return false;
     }
     offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
@@ -835,7 +832,6 @@ int modify_student_info(int connFD){
         perror("Error while writing ADMIN_MOD_STUDENT_SUCCESS message to client!");
         return false;
     }
-    readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
     return true;
 }
 
@@ -876,7 +872,6 @@ int modify_faculty_info(int connFD){
             perror("Error while writing faculty id doesnt exists message to client!");
             return false;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return false;
     }
     
@@ -892,7 +887,6 @@ int modify_faculty_info(int connFD){
             perror("Error while writing faculty id doesnt exists message to client!");
             return false;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
         return false;
     }
     else if (offset == -1)
@@ -934,7 +928,7 @@ int modify_faculty_info(int connFD){
     if (readBytes == -1)
     {
         perror("Error while getting faculty modification menu choice from client!");
-        return false;
+        return 0;
     }
 
     int choice = atoi(readBuffer);
@@ -946,10 +940,9 @@ int modify_faculty_info(int connFD){
         if (writeBytes == -1)
         {
             perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
-            return false;
+            return 0;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-        return false;
+        return 0;
     }
 
     bzero(readBuffer, sizeof(readBuffer));
@@ -1042,10 +1035,9 @@ int modify_faculty_info(int connFD){
         if (writeBytes == -1)
         {
             perror("Error while writing INVALID_MENU_CHOICE message to client!");
-            return false;
+            return 0;
         }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-        return false;
+        return 0;
     }
 
     facultyFileDescriptor = open(FACULTY_FILE, O_WRONLY);
@@ -1085,11 +1077,9 @@ int modify_faculty_info(int connFD){
     if (writeBytes == -1)
     {
         perror("Error while writing ADMIN_MOD_FACULTY_SUCCESS message to client!");
-        return false;
+        return 0;
     }
-    readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-    return true;
+    return 1;
 }
-
 
 #endif

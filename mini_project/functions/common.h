@@ -1,22 +1,26 @@
-#include <stdio.h>     // Import for `printf` & `perror`
-#include <unistd.h>    // Import for `read`, `write & `lseek`
-#include <string.h>    // Import for string functions
-#include <stdbool.h>   // Import for `bool` data type
-#include <sys/types.h> // Import for `open`, `lseek`
-#include <sys/stat.h>  // Import for `open`
-#include <fcntl.h>     // Import for `open`
-#include <stdlib.h>    // Import for `atoi`
-#include <errno.h>     // Import for `errno`
+#include <stdio.h>     
+#include <unistd.h>    
+#include <string.h>    
+#include <stdbool.h>   
+#include <sys/types.h> 
+#include <sys/stat.h>  
+#include <fcntl.h>     
+#include <stdlib.h>    
+#include <errno.h>     
 #include <crypt.h>
 
 #include "./server-constants.h"
 #include "./admin-credentials.h"
 #include "../record-struct/faculty.h"
 #include "../record-struct/student.h"
-bool login_handler(int user, int connFD, struct Student *ptrToCustomerID)
+#include "../record-struct/course.h"
+
+bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID);
+
+bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID)
 {
-    ssize_t readBytes, writeBytes;            // Number of bytes written to / read from the socket
-    char readBuffer[1000], writeBuffer[1000]; // Buffer for reading from / writing to the client
+    ssize_t readBytes, writeBytes;            
+    char readBuffer[1000], writeBuffer[1000]; 
     char tempBuffer[1000];
     struct Faculty faculty;
     struct Student student;
@@ -50,52 +54,58 @@ bool login_handler(int user, int connFD, struct Student *ptrToCustomerID)
         if (strcmp(readBuffer, ADMIN_LOGIN_ID) == 0)
             userFound = true;
     }
-    // else if(user==2)
-    // {
-    //     bzero(tempBuffer, sizeof(tempBuffer));
-    //     strcpy(tempBuffer, readBuffer);
-    //     strtok(tempBuffer, " ");
-    //     ID = atoi(strtok(NULL, " "));
+    else if(user==2)
+    {
+        bzero(tempBuffer, sizeof(tempBuffer));
+        strcpy(tempBuffer, readBuffer);
+        int id;
+        char *numberStart = NULL;
+        // Find the position of "FT-" in the string
+        char *ftPosition = strstr(tempBuffer,"FT-");
+        if (ftPosition != NULL) {
+           // Move the pointer to the character right after "FT-"
+           numberStart = ftPosition + strlen("FT-");
+           id = atoi(numberStart);
+        } 
 
-    //     int facultyFileFD = open(FACULTY_FILE, O_RDONLY);
-    //     if (facultyFileFD == -1)
-    //     {
-    //         perror("Error opening faculty file in read mode!");
-    //         return false;
-    //     }
+        int facultyFileFD = open(FACULTY_FILE, O_RDONLY);
+        if (facultyFileFD == -1)
+        {
+            perror("Error opening faculty file in read mode!");
+            return false;
+        }
 
-    //     off_t offset = lseek(facultyFileFD,ID * sizeof(struct Faculty), SEEK_SET);
-    //     if (offset >= 0)
-    //     {
-    //         struct flock lock = {F_RDLCK, SEEK_SET, ID * sizeof(struct Faculty), sizeof(struct Faculty), getpid()};
+        off_t offset = lseek(facultyFileFD,(id-1) * sizeof(struct Faculty), SEEK_SET);
+        if (offset >= 0)
+        {
+            struct flock lock = {F_RDLCK, SEEK_SET, (id-1) * sizeof(struct Faculty), sizeof(struct Faculty), getpid()};
 
-    //         int lockingStatus = fcntl(facultyFileFD, F_SETLKW, &lock);
-    //         if (lockingStatus == -1)
-    //         {
-    //             perror("Error obtaining read lock on customer record!");
-    //             return false;
-    //         }
+            int lockingStatus = fcntl(facultyFileFD, F_SETLKW, &lock);
+            if (lockingStatus == -1)
+            {
+                perror("Error obtaining read lock on faculty record!");
+                return false;
+            }
 
-    //         readBytes = read(facultyFileFD, &faculty, sizeof(struct Faculty));
-    //         if (readBytes == -1)
-    //         {
-    //             ;
-    //             perror("Error reading customer record from file!");
-    //         }
+            readBytes = read(facultyFileFD, &faculty, sizeof(struct Faculty));
+            if (readBytes == -1)
+            {
+                perror("Error reading faculty record from file!");
+            }
 
-    //         lock.l_type = F_UNLCK;
-    //         fcntl(customerFileFD, F_SETLK, &lock);
+            lock.l_type = F_UNLCK;
+            fcntl(facultyFileFD, F_SETLK, &lock);
 
-    //         if (strcmp(customer.login, readBuffer) == 0)
-    //             userFound = true;
+            if (strcmp(faculty.loginid, readBuffer) == 0)
+                userFound = true;
 
-    //         close(customerFileFD);
-    //     }
-    //     else
-    //     {
-    //         writeBytes = write(connFD, CUSTOMER_LOGIN_ID_DOESNT_EXIT, strlen(CUSTOMER_LOGIN_ID_DOESNT_EXIT));
-    //     }
-    // }
+            close(facultyFileFD);
+        }
+        else
+        {
+            writeBytes = write(connFD, FACULTY_LOGIN_ID_DOESNT_EXIT, strlen(FACULTY_LOGIN_ID_DOESNT_EXIT));
+        }
+    }
 
     if(userFound)
     {
@@ -112,23 +122,23 @@ bool login_handler(int user, int connFD, struct Student *ptrToCustomerID)
             perror("Error reading password from the client!");
             return false;
         }
-
+          
         char hashedPassword[1000];
-        // strcpy(hashedPassword, crypt(readBuffer, SALT_BAE));
-        strcpy(hashedPassword,readBuffer);
+        strcpy(hashedPassword, crypt(readBuffer, SALT_BAE));
         if (user==1)
         {
-            if (strcmp(hashedPassword, ADMIN_PASSWORD) == 0)
+            if (strcmp(readBuffer, ADMIN_PASSWORD) == 0)
                 return true;
         }
-        // else
-        // {
-        //     if (strcmp(hashedPassword, customer.password) == 0)
-        //     {
-        //         *ptrToCustomerID = customer;
-        //         return true;
-        //     }
-        // }
+        else
+        {
+            //66pXmLtsArbAk
+            if (strcmp(hashedPassword, faculty.password) == 0)
+            {
+                *ptrToFacultyID = faculty;
+                return true;
+            }
+        }
 
         bzero(writeBuffer, sizeof(writeBuffer));
         writeBytes = write(connFD, INVALID_PASSWORD, strlen(INVALID_PASSWORD));

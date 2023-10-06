@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <string.h>  
 
-void connection_handler(int connFD);
+int connection_handler(int connFD);
 void main(){
     int socketFileDescriptor; 
     int connectStatus; 
@@ -39,7 +39,7 @@ void main(){
     close(socketFileDescriptor);
 }
 
-void connection_handler(int sockFD)
+int connection_handler(int sockFD)
 {
     char readBuffer[1000], writeBuffer[1000]; // A buffer used for reading from / writting to the server
     ssize_t readBytes, writeBytes;            // Number of bytes read from / written to the socket
@@ -53,8 +53,9 @@ void connection_handler(int sockFD)
         readBytes = read(sockFD, readBuffer, sizeof(readBuffer));
         if (readBytes == -1)
             perror("Error while reading from client socket!");
-        else if (readBytes == 0)
-            printf("No message received from server! Closing the connection to the server now!\n");
+        else if (readBytes == 0){
+            return 0;
+        }
         else
         {
             printf("%s\n", readBuffer);
@@ -70,16 +71,3 @@ void connection_handler(int sockFD)
 
     close(sockFD);
 }
-
-    // readBytes = read(socketFileDescriptor, dataFromServer, 134);
-    // if(readBytes == -1)
-    //    perror("Error while reading from network via socket!");
-    // else
-    //    printf("%s\n", dataFromServer);
-    // scanf("%d",&choice);
-
-    // writeBytes = write(socketFileDescriptor,&choice,1);
-    // if (writeBytes == -1)
-    //     perror("Error while writing to network via socket!");
-
-    
