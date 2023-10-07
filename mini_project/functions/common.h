@@ -14,10 +14,11 @@
 #include "../record-struct/faculty.h"
 #include "../record-struct/student.h"
 #include "../record-struct/course.h"
+#include "../record-struct/enrollment.h"
 
-bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID);
+bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID, struct Student *ptrToStudentID);
 
-bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID)
+bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct Student *ptrToStudentID)
 {
     ssize_t readBytes, writeBytes;            
     char readBuffer[1000], writeBuffer[1000]; 
@@ -106,7 +107,58 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID)
             writeBytes = write(connFD, FACULTY_LOGIN_ID_DOESNT_EXIT, strlen(FACULTY_LOGIN_ID_DOESNT_EXIT));
         }
     }
+    else if(user==3){
 
+        bzero(tempBuffer, sizeof(tempBuffer));
+        strcpy(tempBuffer, readBuffer);
+        int id;
+        char *numberStart = NULL;
+        // Find the position of "ST-" in the string
+        char *ftPosition = strstr(tempBuffer,"ST-");
+        if (ftPosition != NULL) {
+           // Move the pointer to the character right after "ST-"
+           numberStart = ftPosition + strlen("ST-");
+           id = atoi(numberStart);
+        } 
+
+        int studentFileFD = open(STUDENT_FILE, O_RDONLY);
+        if (studentFileFD == -1)
+        {
+            perror("Error opening student file in read mode!");
+            return 0;
+        }
+
+        off_t offset = lseek(studentFileFD,(id-1) * sizeof(struct Student), SEEK_SET);
+        if (offset >= 0)
+        {
+            struct flock lock = {F_RDLCK, SEEK_SET, (id-1) * sizeof(struct Student), sizeof(struct Student), getpid()};
+
+            int lockingStatus = fcntl(studentFileFD, F_SETLKW, &lock);
+            if (lockingStatus == -1)
+            {
+                perror("Error obtaining read lock on student record!");
+                return false;
+            }
+
+            readBytes = read(studentFileFD, &student, sizeof(struct Student));
+            if (readBytes == -1)
+            {
+                perror("Error reading student record from file!");
+            }
+
+            lock.l_type = F_UNLCK;
+            fcntl(studentFileFD, F_SETLK, &lock);
+
+            if (strcmp(student.loginid, readBuffer) == 0)
+                userFound = true;
+
+            close(studentFileFD);
+        }
+        else
+        {
+            writeBytes = write(connFD, STUDENT_LOGIN_ID_DOESNT_EXIT, strlen(STUDENT_LOGIN_ID_DOESNT_EXIT));
+        }
+    }
     if(userFound)
     {
         bzero(writeBuffer, sizeof(writeBuffer));
@@ -130,12 +182,19 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID)
             if (strcmp(readBuffer, ADMIN_PASSWORD) == 0)
                 return true;
         }
-        else
+        else if(user==2)
         {
-            //66pXmLtsArbAk
+            //66pXmLtsArbAk --->shinchannobitha
             if (strcmp(hashedPassword, faculty.password) == 0)
             {
                 *ptrToFacultyID = faculty;
+                return true;
+            }
+        }
+        else{
+            if (strcmp(hashedPassword, student.password) == 0)
+            {
+                *ptrToStudentID = student;
                 return true;
             }
         }

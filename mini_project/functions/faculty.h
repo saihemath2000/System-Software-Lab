@@ -18,7 +18,7 @@ int change_password(int connFD);
 int logout(int connFD);
 
 int faculty_operation_handler(int connFD){
-    if(login_handler(2,connFD,&loggedInFaculty)){
+    if(login_handler(2,connFD,&loggedInFaculty,NULL)){
         key_t semKey = ftok(FACULTY_FILE,loggedInFaculty.id); // Generate a key based on the account number hence, different customers will have different semaphores
         union semun
         {
@@ -546,7 +546,7 @@ int view_offering_course(int connFD){
     {
         // Course record doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "Course id doesn't exists");
+        strcpy(writeBuffer, "Course id doesn't exists $");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
@@ -585,7 +585,7 @@ int view_offering_course(int connFD){
         return 0;
     }
     else if(strcmp(fetchcourse.status,"notactive")==0){
-        write(connFD,"No course found!",17);
+        write(connFD,"No course found ^",18);
         return 0;
     }
     sprintf(writeBuffer, "********* Course Details *********  \n\tName: %s\n\tDepartment : %s\n\tNo of Seats: %d\n\tCredits : %d\n\tNo of available seats: %d\n\tCourse-id: %s", fetchcourse.name, fetchcourse.department,fetchcourse.no_of_seats,fetchcourse.credits,fetchcourse.no_of_available_seats,fetchcourse.courseid);
@@ -922,7 +922,6 @@ int add_course(int connFD){
 
     bzero(writeBuffer, sizeof(writeBuffer));
     sprintf(writeBuffer, "%s%s", ADD_COURSE_SUCCESS, newCourse.courseid);
-    strcat(writeBuffer, "\nRedirecting you to the main menu ...");
     writeBytes = write(connFD, writeBuffer, sizeof(writeBuffer));
     return 1;
 }

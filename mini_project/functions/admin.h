@@ -13,7 +13,7 @@ int modify_faculty_info(int connFD);
 int log_out(int connFD);
 int admin_operation_handler(int connFD)
 {
-    if(login_handler(1,connFD,NULL))
+    if(login_handler(1,connFD,NULL,NULL))
     {
         ssize_t writeBytes, readBytes;            // Number of bytes read from / written to the client
         char readBuffer[1000], writeBuffer[1000]; // A buffer used for reading & writing to the client
@@ -21,7 +21,6 @@ int admin_operation_handler(int connFD)
         strcpy(writeBuffer, LOGIN_SUCCESS);
         while (1)
         {
-            strcat(writeBuffer, "\n");
             strcat(writeBuffer, ADMIN_MENU);
             writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
             if (writeBytes == -1)
@@ -169,7 +168,8 @@ int get_student_details(int connFD)
     bzero(writeBuffer, sizeof(writeBuffer));
     sprintf(writeBuffer, "********* Student Details *********  \n\tName: %s\n\tAge : %d\n\tEmail : %s\n\tAddress: %s\n\tLogin-id: %s", fetchstudent.name, fetchstudent.age,fetchstudent.email,fetchstudent.address,fetchstudent.loginid);
 
-    strcat(writeBuffer, "\n\nYou'll now be redirected to the Admin menu...");
+    strcat(writeBuffer, "\n\nYou'll now be redirected to the Admin menu ^ \n");
+    // strcat(writeBuffer," ^");
 
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
@@ -177,6 +177,8 @@ int get_student_details(int connFD)
         perror("Error writing student info to client!");
         return false;
     }
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+
     return true;
 }
 
@@ -259,7 +261,7 @@ int get_faculty_details(int connFD)
     bzero(writeBuffer, sizeof(writeBuffer));
     sprintf(writeBuffer, "********* Faculty Details *********  \n\tName: %s\n\tDepartment : %s\n\tDesignation: %s\n\tEmail : %s\n\tAddress: %s\n\tLogin-id: %s", fetchfaculty.name, fetchfaculty.department,fetchfaculty.designation,fetchfaculty.email,fetchfaculty.address,fetchfaculty.loginid);
 
-    strcat(writeBuffer, "\n\nYou'll now be redirected to the Admin menu...");
+    strcat(writeBuffer, "\n\nYou'll now be redirected to the Admin menu... ^ ");
 
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
@@ -267,6 +269,7 @@ int get_faculty_details(int connFD)
         perror("Error writing faculty info to client!");
         return 0;
     }
+    read(connFD,readBuffer,sizeof(readBuffer));
     return 1;
 }
 
@@ -344,14 +347,13 @@ int add_student(int connFD)
         return false;
     }
     bzero(readBuffer, sizeof(readBuffer));
-    int temp1;
-    readBytes = read(connFD, &temp1, sizeof(temp1));
+    readBytes = read(connFD, readBuffer, sizeof(readBuffer));
     if (readBytes == -1)
     {
         perror("Error reading age response from client!");
         return false;
     }
-    newStudent.age=temp1;
+    newStudent.age=atoi(readBuffer);
 
     // Enter address:
     writeBytes = write(connFD, ADD_ADDRESS,strlen(ADD_ADDRESS));
@@ -407,14 +409,10 @@ int add_student(int connFD)
         perror("Error while writing Student record to file!");
         return 0;
     }
-    writeBytes = write(connFD, ADD_STUDENT_SUCCESS,strlen(ADD_STUDENT_SUCCESS));
-    if (writeBytes == -1)
-    {
-        perror("Error writing ADD_STUDENT_SUCCESS message to client!");
-        return false;
-    }
-    // bzero(writeBuffer, sizeof(writeBuffer));
+    close(studentFileDescriptor);
+    bzero(writeBuffer, sizeof(writeBuffer));
     sprintf(writeBuffer, "%s%s\n", ADMIN_ADD_STUDENT_AUTOGEN_LOGIN,newStudent.loginid);
+    strcat(writeBuffer, "^");
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
     {
@@ -422,7 +420,6 @@ int add_student(int connFD)
         return 0;
     }
     readBytes = read(connFD,readBuffer,sizeof(readBuffer));
-    close(studentFileDescriptor);
     return newStudent.id;
 }
 
@@ -575,20 +572,16 @@ int add_faculty(int connFD)
         perror("Error while writing Faculty record to file!");
         return 0;
     }
-    writeBytes = write(connFD, ADD_FACULTY_SUCCESS,strlen(ADD_FACULTY_SUCCESS));
-    if (writeBytes == -1)
-    {
-        perror("Error writing ADD_FACULTY_SUCCESS message to client!");
-        return false;
-    }
-    // bzero(writeBuffer, sizeof(writeBuffer));
+    bzero(writeBuffer, sizeof(writeBuffer));
     sprintf(writeBuffer, "%s%s\n", ADMIN_ADD_FACULTY_AUTOGEN_LOGIN,newFaculty.loginid);
+    strcat(writeBuffer,"^");
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
     {
         perror("Error displaying login details");
         return 0;
     }
+    read(connFD,readBuffer,sizeof(readBuffer));
     close(facultyFileDescriptor);
     return newFaculty.id;
 }

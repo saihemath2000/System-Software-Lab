@@ -56,17 +56,43 @@ int connection_handler(int sockFD)
         else if (readBytes == 0){
             return 0;
         }
-        else
+        else if (strchr(readBuffer, '^') != NULL)
         {
-            printf("%s\n", readBuffer);
-            scanf("%[^\n]%*c", writeBuffer); // Take user input!
-            writeBytes = write(sockFD, writeBuffer, strlen(writeBuffer));
-            if (writeBytes == -1){
+            // Skip read from client
+            strncpy(tempBuffer, readBuffer, strlen(readBuffer) - 1);
+            printf("%s\n", tempBuffer);
+            writeBytes = write(sockFD, "^", strlen("^"));
+            if (writeBytes == -1)
+            {
                 perror("Error while writing to client socket!");
-                printf("Closing the connection to the server now!\n");
                 break;
             }
         }
+        else if (strchr(readBuffer, '$') != NULL)
+        {
+            // Server sent an error message and is now closing it's end of the connection
+            strncpy(tempBuffer, readBuffer, strlen(readBuffer) - 2);
+            printf("%s\n", tempBuffer);
+            printf("Closing the connection to the server now!\n");
+            break;
+        }
+        else
+        {
+            bzero(writeBuffer, sizeof(writeBuffer)); // Empty the write buffer
+
+            if (strchr(readBuffer, '#') != NULL)
+                strcpy(writeBuffer, getpass(readBuffer));
+            else{
+               printf("%s\n", readBuffer);
+               scanf("%[^\n]%*c", writeBuffer); // Take user input!
+            }
+               writeBytes = write(sockFD, writeBuffer, strlen(writeBuffer));
+               if (writeBytes == -1){
+                 perror("Error while writing to client socket!");
+                 printf("Closing the connection to the server now!\n");
+                 break;
+               }
+            }
     } while(readBytes > 0);
 
     close(sockFD);

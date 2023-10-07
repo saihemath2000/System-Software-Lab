@@ -7,6 +7,8 @@
 #include "./functions/server-constants.h"
 #include "./functions/admin.h"
 #include "./functions/faculty.h"
+#include "./functions/student.h"
+
 int handle_client(int client_socket,int i) {
     int userchoice;
     char received[1000];
@@ -31,10 +33,10 @@ int handle_client(int client_socket,int i) {
               // Professor
                 faculty_operation_handler(client_socket);
                 break;
-        // case 3:
-        //       // Student
-        //         student_operation_handler(client_socket);
-        //         break;         
+        case 3:
+              // Student
+                student_operation_handler(client_socket);
+                break;         
         default:
                 // Exit
                 break;
