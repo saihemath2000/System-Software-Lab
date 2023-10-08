@@ -172,7 +172,7 @@ int remove_course(int connFD){
     }
 
     struct flock lock = {F_RDLCK, SEEK_SET, offset, sizeof(struct Course), getpid()};
-
+    struct flock lock1 = {F_RDLCK,SEEK_SET,offset,sizeof(struct Enrollment),getpid()}; 
     // Lock the record to be read
     lockingStatus = fcntl(courseFileDescriptor, F_SETLKW, &lock);
     if (lockingStatus == -1)
@@ -194,11 +194,13 @@ int remove_course(int connFD){
 
     close(courseFileDescriptor);
     if(strcmp(loggedInFaculty.loginid,course.facultyloginid)!=0){
-        write(connFD,"Not your course to remove",25);
+        write(connFD,"Not your course to remove ^",27);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     else if(strcmp(course.status,"notactive")==0){
-        write(connFD,"Course not found to remove",27);
+        write(connFD,"Course not found to remove ^",29);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
 
@@ -237,6 +239,76 @@ int remove_course(int connFD){
     fcntl(courseFileDescriptor, F_SETLKW, &lock);
 
     close(courseFileDescriptor);
+ 
+    // make uneroll for those courses
+    struct Enrollment enroll;
+    int enrollfd;
+    bool flag=false;
+    int temp1[15][10];
+    int i,n;
+    int count=0;
+    enrollfd = open(ENROLL_FILE,O_RDONLY);
+    while((n = read(enrollfd, &enroll, sizeof(struct Enrollment))) > 0) {
+       if((strcmp(enroll.status,"enrolled")==0)  && (strcmp(enroll.courseid,readBuffer)==0)){              
+         temp1[i][10]= enroll.id;
+         i++;
+         count++;
+         flag=true;  
+       }
+    }
+    close(enrollfd);
+    if(flag==true){
+       for(int i=0;i<count;i++){
+            enrollfd = open(ENROLL_FILE,O_RDONLY);
+            int offset = lseek(enrollfd,(temp1[i][10]-1)*sizeof(struct Enrollment),SEEK_SET);
+            if(offset == -1){
+                perror("Error while seeking to required enrollment record!");
+                return 0;
+            }
+            lock1.l_type = F_RDLCK;
+            lock1.l_start = offset;
+            int lockingStatus = fcntl(enrollfd, F_SETLKW, &lock1);
+            if (lockingStatus == -1){
+                perror("Error while obtaining read lock on enrollment record!");
+                return 0;
+            }
+            readBytes = read(enrollfd, &enroll, sizeof(struct Enrollment));
+            if(readBytes == -1){
+                perror("Error while reading enrollment record from the file!");
+                return 0;
+            }
+            lock1.l_type = F_UNLCK;
+            lockingStatus = fcntl(enrollfd, F_SETLK, &lock1);   
+            close(enrollfd);
+            strcpy(enroll.status,"unenrolled");
+  
+            enrollfd = open(ENROLL_FILE,O_WRONLY);
+            if (enrollfd == -1){
+                perror("Error while opening enrollment file");
+                return 0;
+            }
+            offset = lseek(enrollfd, (temp1[i][10]-1) * sizeof(struct Enrollment), SEEK_SET);
+            if(offset == -1){
+                perror("Error while seeking to required enrollment record!");
+                return 0;
+            }
+            lock1.l_type = F_WRLCK;
+            lock1.l_start = offset;
+            lockingStatus = fcntl(enrollfd, F_SETLKW, &lock);
+            if(lockingStatus == -1){
+                perror("Error while obtaining write lock on enrollment record!");
+                return 0;
+            }
+            writeBytes = write(enrollfd, &enroll, sizeof(struct Enrollment));
+            if(writeBytes == -1){
+                perror("Error while writing update enrollment info into file");
+            }
+            lock1.l_type = F_UNLCK;
+            fcntl(enrollfd, F_SETLKW, &lock1);
+            close(enrollfd);
+       }
+    }
+
 
     writeBytes = write(connFD, DEL_COURSE_SUCCESS, strlen(DEL_COURSE_SUCCESS));
     if (writeBytes == -1)
@@ -244,6 +316,7 @@ int remove_course(int connFD){
         perror("Error while writing DEL_COURSE_SUCCESS message to client!");
         return 0;
     }
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     return 1;
 }
 
@@ -490,6 +563,7 @@ int modify_course(int connFD){
         perror("Error while writing MOD_COURSE_SUCCESS message to client!");
         return 0;
     }
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     return 1;    
 }
 
@@ -532,13 +606,14 @@ int view_offering_course(int connFD){
     {
         // Course File doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "course file id doesn't exists");
+        strcpy(writeBuffer, "course file id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes ==-1)
         {
             perror("Error while writing COURSE_ID_DOESNT_EXIT message to client!");
             return 0;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     int offset = lseek(courseFileDescriptor, (courseID-1) * sizeof(struct Course), SEEK_SET);
@@ -582,15 +657,17 @@ int view_offering_course(int connFD){
     bzero(writeBuffer, sizeof(writeBuffer));
     if(strcmp(fetchcourse.facultyloginid,loggedInFaculty.loginid)!=0){
         write(connFD,NOT_YOUR_COURSE,strlen(NOT_YOUR_COURSE));
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     else if(strcmp(fetchcourse.status,"notactive")==0){
         write(connFD,"No course found ^",18);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     sprintf(writeBuffer, "********* Course Details *********  \n\tName: %s\n\tDepartment : %s\n\tNo of Seats: %d\n\tCredits : %d\n\tNo of available seats: %d\n\tCourse-id: %s", fetchcourse.name, fetchcourse.department,fetchcourse.no_of_seats,fetchcourse.credits,fetchcourse.no_of_available_seats,fetchcourse.courseid);
 
-    strcat(writeBuffer, "\n\nYou'll now be redirected to the Faculty menu...");
+    strcat(writeBuffer, "\n\nYou'll now be redirected to the Faculty menu ^");
 
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
@@ -598,6 +675,7 @@ int view_offering_course(int connFD){
         perror("Error writing course info to client!");
         return 0;
     }
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     return true;
 }
 
@@ -895,9 +973,10 @@ int add_course(int connFD){
     newCourse.no_of_available_seats=seats;
 
     //courseid
+    char y[4];
     strcpy(newCourse.courseid,"C-");
-    sprintf(writeBuffer, "%d", newCourse.id);
-    strcat(newCourse.courseid, writeBuffer);
+    sprintf(y ,"%d",newCourse.id);
+    strcat(newCourse.courseid, y);
 
     //course faculty name
     strcpy(newCourse.facultyloginid,loggedInFaculty.loginid);
@@ -921,8 +1000,10 @@ int add_course(int connFD){
     close(courseFileDescriptor);
 
     bzero(writeBuffer, sizeof(writeBuffer));
-    sprintf(writeBuffer, "%s%s", ADD_COURSE_SUCCESS, newCourse.courseid);
+    sprintf(writeBuffer, "%s%s%d", ADD_COURSE_SUCCESS, newCourse.courseid,newCourse.id);
     writeBytes = write(connFD, writeBuffer, sizeof(writeBuffer));
+    
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     return 1;
 }
 

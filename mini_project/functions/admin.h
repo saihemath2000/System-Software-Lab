@@ -132,13 +132,14 @@ int get_student_details(int connFD)
     {
         // Customer record doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "Student id doesn't exists");
+        strcpy(writeBuffer, "Student id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
             perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
             return 0;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     else if (offset == -1)
@@ -224,7 +225,7 @@ int get_faculty_details(int connFD)
     {
         // Faculty record doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "Faculty id doesn't exists");
+        strcpy(writeBuffer, "Faculty id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
@@ -487,6 +488,7 @@ int add_faculty(int connFD)
         return false;
     }
     strcpy(newFaculty.name,readBuffer);
+    
     
     // Enter Department:
     writeBytes = write(connFD,ENTER_DEPARTMENT,strlen(ENTER_DEPARTMENT));

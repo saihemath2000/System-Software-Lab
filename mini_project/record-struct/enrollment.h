@@ -5,7 +5,8 @@ struct Enrollment
 {
     int id; // 0, 1, 2 ....
     char courseid[6];
-    char studentid[6];    
+    char studentid[6];
+    char status[12];    
 };
 
 #endif

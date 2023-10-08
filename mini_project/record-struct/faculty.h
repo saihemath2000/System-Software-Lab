@@ -5,7 +5,7 @@ struct Faculty
 {
     int id; // 0, 1, 2 ....
     char name[25];
-    char department[3];
+    char department[6];
     char designation[50]; 
     char address[160];
     char email[80];

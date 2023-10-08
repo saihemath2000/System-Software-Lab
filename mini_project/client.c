@@ -83,7 +83,7 @@ int connection_handler(int sockFD)
             if (strchr(readBuffer, '#') != NULL)
                 strcpy(writeBuffer, getpass(readBuffer));
             else{
-               printf("%s\n", readBuffer);
+               printf("%s", readBuffer);
                scanf("%[^\n]%*c", writeBuffer); // Take user input!
             }
                writeBytes = write(sockFD, writeBuffer, strlen(writeBuffer));
