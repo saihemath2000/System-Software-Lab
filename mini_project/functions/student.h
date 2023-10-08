@@ -110,6 +110,11 @@ int drop_course(int connFD){
   struct Course course;
   int enrollID,n;
   struct flock lock = {F_WRLCK, SEEK_SET, 0, sizeof(struct Enrollment), getpid()};
+  if(strcmp(loggedInStudent.access,"blocked")==0){
+    write(connFD,"You are blocked by admin ^",26);
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+    return 0;
+  }
   writeBytes = write(connFD,"Enter the course-id you want to drop:",37);
   readBytes = read(connFD,readBuffer,sizeof(readBuffer));
   if(readBytes==-1){
@@ -264,6 +269,13 @@ int view_enrolled_courses(int connFD){
     struct Enrollment enroll;
     struct Course course;
     bool flag=false;
+    
+    if(strcmp(loggedInStudent.access,"blocked")==0){
+       write(connFD,"You are blocked by admin ^",26);
+       readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+       return 0;
+    }
+
     enrollFileDescriptor = open(ENROLL_FILE,O_RDONLY);
     while((n = read(enrollFileDescriptor, &enroll, sizeof(struct Enrollment))) > 0) {
         if((strcmp(enroll.status,"unenrolled")!=0) && (strcmp(enroll.studentid,loggedInStudent.loginid)==0)){              
@@ -305,6 +317,13 @@ int enroll_course(int connFD){
     struct Course fetchcourse;
     int courseFileDescriptor;
     struct flock lock = {F_WRLCK, SEEK_SET, 0, sizeof(struct Course), getpid()};
+    
+    if(strcmp(loggedInStudent.access,"blocked")==0){
+       write(connFD,"You are blocked by admin ^",26);
+       readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+       return 0;
+    }
+
     courseFileDescriptor = open(COURSE_FILE, O_RDONLY);
     if (courseFileDescriptor == -1)
     {
@@ -556,6 +575,12 @@ int view_all_courses(int connFD){
     int courseFileDescriptor;
     struct flock lock = {F_RDLCK, SEEK_SET, 0, sizeof(struct Course), getpid()};
 
+    if(strcmp(loggedInStudent.access,"blocked")==0){
+       write(connFD,"You are blocked by admin ^",26);
+       readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+       return 0;
+    }
+
     courseFileDescriptor = open(COURSE_FILE, O_RDONLY);
     if (courseFileDescriptor == -1)
     {
@@ -742,5 +767,6 @@ int Change_password(int connFD){
     unlock_critical_section(&semOp);
     return 0;  
 }
+
 
 #endif

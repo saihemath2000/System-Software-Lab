@@ -12,6 +12,7 @@ struct Student
     // Login Credentials
     char loginid[30]; // Format : name-id (name will the first word in the structure member `name`)
     char password[30];
+    char access[10];
     
 };
 
