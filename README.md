@@ -156,16 +156,16 @@ The project aims to develop a Academia Portal that is user-friendly and multifun
 7. Once the Student connects to the server, He/She should get a login and password prompt.
 8. After successful login, He/She should get menu for example:
 
-   Do you want to:
+    Do you want to:
 
-    - Enroll to new Courses
-    - Unenroll from already enrolled Courses
-    - View enrolled Courses
-    - Password Change
-    - Exit
+     - Enroll to new Courses
+     - Unenroll from already enrolled Courses
+     - View enrolled Courses
+     - Password Change
+     - Exit
       
-10. Once the Faculty connects to the server, He/She should get a login and password prompt.
-11. After successful login, He/She should get menu for example:
+9. Once the Faculty connects to the server, He/She should get a login and password prompt.
+10. After successful login, He/She should get menu for example:
 
    Do you want to:
    
@@ -175,7 +175,7 @@ The project aims to develop a Academia Portal that is user-friendly and multifun
    - Password Change
    - Exit
      
-12. If you want to view the Course details then read lock is to be set else if you want to Enroll or Unenroll then write lock should be used to protect the critical data section.
-13. Use socket programming – Server maintains the database and serves multiple clients concurrently. Clients can connect to the server and access their specific academic details.
-14. Use System calls instead of Library functions wherever it is possible in the project: Process Management, File Management, File Locking, Semaphores, Multithreading and Inter Process   Communication Mechanisms.
+11. If you want to view the Course details then read lock is to be set else if you want to Enroll or Unenroll then write lock should be used to protect the critical data section.
+12. Use socket programming – Server maintains the database and serves multiple clients concurrently. Clients can connect to the server and access their specific academic details.
+13. Use System calls instead of Library functions wherever it is possible in the project: Process Management, File Management, File Locking, Semaphores, Multithreading and Inter Process   Communication Mechanisms.
 
