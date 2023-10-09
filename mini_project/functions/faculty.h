@@ -3,6 +3,7 @@
 
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include<time.h>
 #include "server-constants.h"
 
 struct Faculty loggedInFaculty;
@@ -320,6 +321,19 @@ int remove_course(int connFD){
     return 1;
 }
 
+int compareEnrollmentTime(const void* a, const void* b) {
+    const struct Enrollment* enrollA = (const struct Enrollment*)a;
+    const struct Enrollment* enrollB = (const struct Enrollment*)b;
+    
+    char timeStrA[20];
+    char timeStrB[20];
+
+    strftime(timeStrA, sizeof(timeStrA), "%Y-%m-%d %H:%M", localtime(&(enrollA->enroll_time)));
+    strftime(timeStrB, sizeof(timeStrB), "%Y-%m-%d %H:%M", localtime(&(enrollB->enroll_time)));
+
+    // Compare the strings in reverse order (descending)
+    return strcmp(timeStrB, timeStrA);
+}
     
 int modify_course(int connFD){
     ssize_t readBytes, writeBytes;
@@ -402,6 +416,9 @@ int modify_course(int connFD){
     }
 
     readBytes = read(courseFileDescriptor, &course, sizeof(struct Course));
+    
+    int noofavailseats = course.no_of_available_seats;
+    int noofseatsbefore = course.no_of_seats;
     if (readBytes == -1)
     {
         perror("Error while reading course record from the file!");
@@ -493,7 +510,37 @@ int modify_course(int connFD){
             perror("Error while getting response for course's new noofseats from client!");
             return 0;
         }
-        course.no_of_seats= atoi(readBuffer);
+        int value = atoi(readBuffer);
+        if(value>noofseatsbefore){
+            course.no_of_available_seats= course.no_of_available_seats+(value-noofseatsbefore);
+        }
+        else if(value<noofseatsbefore){
+            int temp = value-noofseatsbefore;
+            int n;
+            char unenroll_course[10];
+            strcpy(unenroll_course,course.courseid); 
+            if((course.no_of_available_seats+(temp))<0)
+                course.no_of_available_seats=0;
+            else    
+                course.no_of_available_seats=course.no_of_available_seats+(temp);
+            
+            struct Enrollment enroll[2];    
+            size_t numStudents = sizeof(enroll) / sizeof(enroll[0]);
+
+            qsort(enroll, numStudents, sizeof(struct Enrollment), compareEnrollmentTime);
+            int enrollfd = open(ENROLL_FILE,O_RDWR);
+            while((n = read(enrollfd, &enroll, sizeof(struct Enrollment)))>0){
+                if((strcmp(enroll->status,"unenrolled")!=0) && (strcmp(enroll->courseid,unenroll_course)==0) && temp>0){
+                   strcpy(enroll->status,"unenrolled");
+                   lseek(enrollfd, -sizeof(struct Enrollment), SEEK_CUR);
+                   if(write(enrollfd, &enroll, sizeof(struct Enrollment)) == -1) 
+                     perror("Failed to write updated enrollment");
+                   temp--;
+                }                                      
+            }
+            close(enrollfd);
+        }   
+        course.no_of_seats= value;
         break;
 
     case 4:

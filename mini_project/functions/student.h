@@ -3,6 +3,7 @@
 
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <time.h>
 #include "server-constants.h"
 
 struct Student loggedInStudent;
@@ -448,7 +449,7 @@ int enroll_course(int connFD){
                     close(enrollfd);
 
                     strcpy(enroll.status,"enrolled");
-  
+                    enroll.enroll_time= time(NULL);
                     enrollfd = open(ENROLL_FILE,O_WRONLY);
                     if (enrollfd == -1){
                         perror("Error while opening enrollment file");
@@ -507,6 +508,7 @@ int enroll_course(int connFD){
                     strcpy(enroll.courseid,readBuffer);
                     strcpy(enroll.studentid,loggedInStudent.loginid);
                     strcpy(enroll.status,"enrolled");
+                    enroll.enroll_time= time(NULL);
                     enrollfd = open(ENROLL_FILE,O_CREAT|O_APPEND|O_WRONLY,S_IRWXU);
                     if(enrollfd == -1){
                         perror("Error while opening enroll file!");
