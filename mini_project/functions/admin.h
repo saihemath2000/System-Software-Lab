@@ -2,7 +2,9 @@
 #define ADMIN_FUNCTIONS
 
 #include "./common.h"
+#include <regex.h>
 
+#define MAX_EMAIL_LENGTH 100
 int admin_operation_handler(int connFD);
 int add_student(int connFD);
 int get_student_details(int connFD);
@@ -223,6 +225,7 @@ int activate_student(int connFD){
         readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
+
     studentfd = open(STUDENT_FILE,O_RDONLY);
     int offset = lseek(studentfd,(studentID-1)*sizeof(struct Student),SEEK_SET);
     if(offset == -1){
@@ -343,7 +346,22 @@ int get_student_details(int connFD)
         }
         return 0;
     }
-    int offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
+    int offset = lseek(studentFileDescriptor,-sizeof(struct Student),SEEK_END);
+    readBytes = read(studentFileDescriptor, &fetchstudent, sizeof(struct Student));
+    if (readBytes == -1)
+    {
+        perror("Error reading student record from file!");
+        return false;
+    }
+    if(studentID>fetchstudent.id){
+        write(connFD,"Invalid student id ^",20);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
+    }
+    close(studentFileDescriptor);
+
+    studentFileDescriptor = open(STUDENT_FILE,O_RDONLY);
+    offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
     if (errno == EINVAL)
     {
         // Customer record doesn't exist
@@ -382,18 +400,18 @@ int get_student_details(int connFD)
     lock.l_type = F_UNLCK;
     fcntl(studentFileDescriptor, F_SETLK, &lock);
 
-    if(strcmp(fetchstudent.name,"")==0){
-        bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "Student id doesn't exists ^");
-        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-        if (writeBytes == -1)
-        {
-            perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
-            return 0;
-        }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-        return 0;
-    }  
+    // if(strcmp(fetchstudent.name,"")==0){
+    //     bzero(writeBuffer, sizeof(writeBuffer));
+    //     strcpy(writeBuffer, "Student id doesn't exists ^");
+    //     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
+    //     if (writeBytes == -1)
+    //     {
+    //         perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
+    //         return 0;
+    //     }
+    //     readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
+    //     return 0;
+    // }  
 
     bzero(writeBuffer, sizeof(writeBuffer));
     sprintf(writeBuffer, "********* Student Details *********  \n\tName: %s\n\tAge : %d\n\tEmail : %s\n\tAddress: %s\n\tLogin-id: %s", fetchstudent.name, fetchstudent.age,fetchstudent.email,fetchstudent.address,fetchstudent.loginid);
@@ -449,7 +467,20 @@ int get_faculty_details(int connFD)
         }
         return 0;
     }
-    int offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
+    int offset = lseek(facultyFileDescriptor,-sizeof(struct Faculty),SEEK_END);
+    readBytes = read(facultyFileDescriptor, &fetchfaculty, sizeof(struct Faculty));
+    if (readBytes == -1)
+    {
+        perror("Error reading faculty record from file!");
+        return false;
+    }
+    if(facultyID>fetchfaculty.id){
+        write(connFD,"Invalid faculty id ^",20);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
+    }
+    close(facultyFileDescriptor);
+    offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
     if (offset == 0)
     {
         // Faculty record doesn't exist
@@ -627,6 +658,22 @@ int add_student(int connFD)
         perror("Error reading email response from client!");
         return false;
     }
+    const char *pattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}$";
+
+    regex_t regex;
+    if (regcomp(&regex, pattern, REG_EXTENDED) != 0) {
+        return false; // Regular expression compilation failed
+    }
+    int result;
+
+    result = regexec(&regex,readBuffer,0, NULL, 0);
+    regfree(&regex);
+
+    if(result!=0) {
+      write(connFD,"Invalid emailid ^",17);
+      readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+      return 0; 
+    } 
     strcpy(newStudent.email,readBuffer);
 
     //loginid as name+"-"+system_id    
@@ -776,6 +823,22 @@ int add_faculty(int connFD)
     {
         perror("Error reading email response from client!");
         return false;
+    }
+    const char *pattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}$";
+
+    regex_t regex;
+    if (regcomp(&regex, pattern, REG_EXTENDED) != 0) {
+        return false; // Regular expression compilation failed
+    }
+    int result;
+
+    result = regexec(&regex,readBuffer,0, NULL, 0);
+    regfree(&regex);
+
+    if(result!=0) {
+      write(connFD,"Invalid emailid ^",17);
+      readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+      return 0; 
     }
     strcpy(newFaculty.email,readBuffer);
     

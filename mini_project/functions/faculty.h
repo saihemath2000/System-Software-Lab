@@ -7,6 +7,13 @@
 #include "server-constants.h"
 
 struct Faculty loggedInFaculty;
+struct middleware{
+    int myid;
+    time_t mytime;
+};
+struct middleware myDict[100];
+
+
 int semid;
 bool lock_critical_section(struct sembuf *semOp);
 bool unlock_critical_section(struct sembuf *sem_op);
@@ -322,14 +329,14 @@ int remove_course(int connFD){
 }
 
 int compareEnrollmentTime(const void* a, const void* b) {
-    const struct Enrollment* enrollA = (const struct Enrollment*)a;
-    const struct Enrollment* enrollB = (const struct Enrollment*)b;
+    const struct middleware* enrollA = (const struct middleware*)a;
+    const struct middleware* enrollB = (const struct middleware*)b;
     
     char timeStrA[20];
     char timeStrB[20];
 
-    strftime(timeStrA, sizeof(timeStrA), "%Y-%m-%d %H:%M", localtime(&(enrollA->enroll_time)));
-    strftime(timeStrB, sizeof(timeStrB), "%Y-%m-%d %H:%M", localtime(&(enrollB->enroll_time)));
+    strftime(timeStrA, sizeof(timeStrA), "%Y-%m-%d %H:%M", localtime(&(enrollA->mytime)));
+    strftime(timeStrB, sizeof(timeStrB), "%Y-%m-%d %H:%M", localtime(&(enrollB->mytime)));
 
     // Compare the strings in reverse order (descending)
     return strcmp(timeStrB, timeStrA);
@@ -406,7 +413,7 @@ int modify_course(int connFD){
     }
 
     struct flock lock = {F_RDLCK, SEEK_SET, offset, sizeof(struct Course), getpid()};
-
+    struct flock lock1 = {F_RDLCK,SEEK_SET,offset,sizeof(struct Enrollment),getpid()};
     // Lock the record to be read
     lockingStatus = fcntl(courseFileDescriptor, F_SETLKW, &lock);
     if (lockingStatus == -1)
@@ -519,26 +526,79 @@ int modify_course(int connFD){
             int n;
             char unenroll_course[10];
             strcpy(unenroll_course,course.courseid); 
-            if((course.no_of_available_seats+(temp))<0)
+            if((course.no_of_available_seats+(temp))<0){
+                int temp2 = -1*(course.no_of_available_seats+temp);
                 course.no_of_available_seats=0;
+                int i,size;
+                struct Enrollment enroll1;
+                int enrollfd = open(ENROLL_FILE,O_RDWR);
+                while((n = read(enrollfd, &enroll1, sizeof(struct Enrollment)))>0){
+                    if((strcmp(enroll1.status,"enrolled")==0) && (strcmp(enroll1.courseid,unenroll_course)==0)){
+                       myDict[i].myid= enroll1.id;
+                       myDict[i].mytime = enroll1.enroll_time;
+                       size++;
+                       i++;
+                    }                                      
+                }
+                close(enrollfd);
+                qsort(myDict,size, sizeof(struct middleware), compareEnrollmentTime);
+                int a;
+                while(a<temp2 && a<size){
+                    int ID= myDict[a].myid;
+                    struct Enrollment enroll;
+                    enrollfd = open(ENROLL_FILE,O_RDONLY);
+                    offset = lseek(enrollfd,(ID-1)*sizeof(struct Enrollment),SEEK_SET);
+                    if(offset == -1){
+                        perror("Error while seeking to required course record!");
+                        return 0;
+                    }
+                    lock1.l_type = F_RDLCK;
+                    lock1.l_start = offset;
+                    lockingStatus = fcntl(enrollfd, F_SETLKW, &lock);
+                    if(lockingStatus == -1){
+                        perror("Error while obtaining read lock on enrollment record!");
+                        return 0;
+                    }
+                    readBytes = read(enrollfd, &enroll, sizeof(struct Enrollment));
+                    if(readBytes == -1){
+                        perror("Error while reading enrollment record from the file!");
+                        return 0;
+                    }
+                    lock.l_type = F_UNLCK;
+                    lockingStatus = fcntl(enrollfd, F_SETLK, &lock);   
+                    close(enrollfd);
+
+                    strcpy(enroll.status,"unenrolled");
+                    enrollfd = open(ENROLL_FILE,O_WRONLY);
+                    if (enrollfd == -1){
+                        perror("Error while opening enrollment file");
+                        return 0;
+                    }
+                    offset = lseek(enrollfd, (ID-1) * sizeof(struct Enrollment), SEEK_SET);
+                    if(offset == -1){
+                      perror("Error while seeking to required enrollment record!");
+                      return 0;
+                    }
+                    lock.l_type = F_WRLCK;
+                    lock.l_start = offset;
+                    lockingStatus = fcntl(enrollfd, F_SETLKW, &lock);
+                    if(lockingStatus == -1){
+                        perror("Error while obtaining write lock on enrollment record!");
+                        return 0;
+                    }
+                    writeBytes = write(enrollfd, &enroll, sizeof(struct Enrollment));
+                    if (writeBytes == -1){
+                        perror("Error while writing update enrollment info into file");
+                    }
+
+                     lock.l_type = F_UNLCK;
+                     fcntl(enrollfd, F_SETLKW, &lock);
+                     close(enrollfd);
+                     a++;
+                }
+            }
             else    
                 course.no_of_available_seats=course.no_of_available_seats+(temp);
-            
-            struct Enrollment enroll[2];    
-            size_t numStudents = sizeof(enroll) / sizeof(enroll[0]);
-
-            qsort(enroll, numStudents, sizeof(struct Enrollment), compareEnrollmentTime);
-            int enrollfd = open(ENROLL_FILE,O_RDWR);
-            while((n = read(enrollfd, &enroll, sizeof(struct Enrollment)))>0){
-                if((strcmp(enroll->status,"unenrolled")!=0) && (strcmp(enroll->courseid,unenroll_course)==0) && temp>0){
-                   strcpy(enroll->status,"unenrolled");
-                   lseek(enrollfd, -sizeof(struct Enrollment), SEEK_CUR);
-                   if(write(enrollfd, &enroll, sizeof(struct Enrollment)) == -1) 
-                     perror("Failed to write updated enrollment");
-                   temp--;
-                }                                      
-            }
-            close(enrollfd);
         }   
         course.no_of_seats= value;
         break;

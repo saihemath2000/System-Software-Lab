@@ -106,7 +106,7 @@ int drop_course(int connFD){
   ssize_t readBytes, writeBytes;             
   char readBuffer[1000], writeBuffer[10000];
   int enrollFileDescriptor, courseFileDescriptor;
-  bool flag=false;
+  bool flag;
   struct Enrollment enroll;
   struct Course course;
   int enrollID,n;
