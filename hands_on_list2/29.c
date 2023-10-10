@@ -1,10 +1,22 @@
+/*
+============================================================================
+Name : 29.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to remove the message queue.
+Date: 30th Sept 2023.
+============================================================================
+*/
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 
 int main(){
-    key_t key = ftok(".",'b');
+    key_t key = ftok(".",'a');
     if(key==-1){
       perror("ftok");
       return 1;

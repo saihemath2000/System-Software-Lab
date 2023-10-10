@@ -1,3 +1,16 @@
+/*
+============================================================================
+Name : 27a.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to receive messages from the message queue.
+            a. with 0 as a flag
+Date: 30th Sept 2023.
+============================================================================
+*/
+
+
+
 #include<stdio.h>
 #include<sys/ipc.h>
 #include<sys/msg.h>

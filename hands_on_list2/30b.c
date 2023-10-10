@@ -1,3 +1,15 @@
+/*
+============================================================================
+Name : 30b.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to create a shared memory.
+           b.attach with O_RDONLY and check whether you are able to overwrite.
+Date: 1st Oct 2023.
+============================================================================
+*/
+
+
 #include<stdio.h>
 #include<sys/shm.h>
 #include<sys/ipc.h>

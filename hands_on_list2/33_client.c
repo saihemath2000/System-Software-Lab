@@ -1,3 +1,14 @@
+/*
+============================================================================
+Name : 33_client.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to communicate between two machines using socket.
+Date: 1st Oct 2023.
+============================================================================
+*/
+
+
 #include <sys/socket.h> 
 #include <netinet/ip.h> // Import for `struct sockaddr_in`, `htons`
 #include <stdio.h>      
@@ -23,7 +34,7 @@ void main(){
 
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_family = AF_INET;
-    address.sin_port = htons(12345);
+    address.sin_port = htons(8080);
 
     connectStatus = connect(socketFileDescriptor, (struct sockaddr *)&address, sizeof(address));
     if (connectStatus == -1)

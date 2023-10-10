@@ -1,3 +1,14 @@
+/*
+============================================================================
+Name : 21b.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write two programs so that both can communicate by FIFO -Use two way communications.
+         In this file process 2 is reading first and writing to process 1 through the pipe 
+Date: 30th Sept 2023.
+============================================================================
+*/
+
 #include<stdio.h>
 #include<fcntl.h>
 #include<unistd.h>

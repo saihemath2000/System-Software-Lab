@@ -1,3 +1,15 @@
+/*
+============================================================================
+Name : 32d.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to implement semaphore to protect any critical section.
+          d. remove the created semaphore
+Date: 2nd Oct 2023.
+============================================================================
+*/
+
+
 #include <sys/types.h> 
 #include <sys/ipc.h>   
 #include <sys/sem.h>   

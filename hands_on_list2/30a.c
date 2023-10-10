@@ -1,3 +1,16 @@
+/*
+============================================================================
+Name : 30a.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to create a shared memory.
+            a. write some data to the shared memory
+Date: 1st Oct 2023.
+============================================================================
+*/
+
+
+
 #include<stdio.h>
 #include<sys/shm.h>
 #include<sys/ipc.h>

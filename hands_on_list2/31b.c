@@ -1,3 +1,14 @@
+/*
+============================================================================
+Name : 31b.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to create a semaphore and initialize value to the semaphore.
+           b. create a counting semaphore
+Date: 1st Oct 2023.
+============================================================================
+*/
+
 #include <stdio.h>
 #include <sys/sem.h>
 #include <sys/ipc.h>

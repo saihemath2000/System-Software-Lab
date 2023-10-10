@@ -1,3 +1,14 @@
+/*
+============================================================================
+Name : 30d.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to create a shared memory.
+           d. remove the shared memory
+Date: 1st Oct 2023.
+============================================================================
+*/
+
 #include <stdio.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>

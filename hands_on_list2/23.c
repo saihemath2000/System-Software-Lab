@@ -1,3 +1,15 @@
+/*
+============================================================================
+Name : 23.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to print the maximum number of files can be opened within a process and size of a pipe (circular buffer).
+Date: 30th Sept 2023.
+============================================================================
+*/
+
+
+
 #include<stdio.h>
 #include<unistd.h>
 

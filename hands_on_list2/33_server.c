@@ -1,3 +1,13 @@
+/*
+============================================================================
+Name : 33_server.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to communicate between two machines using socket.
+Date: 1st Oct 2023.
+============================================================================
+*/
+
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <stdio.h>      

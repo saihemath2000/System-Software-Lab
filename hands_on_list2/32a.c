@@ -1,3 +1,14 @@
+/*
+============================================================================
+Name : 32a.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to implement semaphore to protect any critical section.
+              a. rewrite the ticket number creation program using semaphore
+Date: 2nd Oct 2023.
+============================================================================
+*/
+
 #include<sys/ipc.h>   
 #include<sys/sem.h>   
 #include<sys/types.h> 

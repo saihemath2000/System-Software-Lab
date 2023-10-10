@@ -1,3 +1,15 @@
+/*
+============================================================================
+Name : 34b.c
+Author : G.Sai Hemanth Kumar
+Description : 
+         Write a program to create a concurrent server.
+            b. use pthread_create
+Date: 1st Oct 2023.
+============================================================================
+*/
+
+
 #include<stdio.h>
 #include<string.h>
 #include<sys/socket.h>
@@ -50,7 +62,7 @@ int main(){
     //memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = INADDR_ANY;
-    server_address.sin_port = htons(12345); 
+    server_address.sin_port = htons(8080); 
 
     // Bind the socket to the server address
     if(bind(server_socket,(struct sockaddr*)&server_address,sizeof(server_address))<0){
