@@ -458,13 +458,14 @@ int get_faculty_details(int connFD)
     {
         // Faculty File doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "faculty id doesn't exists");
+        strcpy(writeBuffer, "faculty id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
             perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
             return false;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     int offset = lseek(facultyFileDescriptor,-sizeof(struct Faculty),SEEK_END);
@@ -480,6 +481,7 @@ int get_faculty_details(int connFD)
         return 0;
     }
     close(facultyFileDescriptor);
+    facultyFileDescriptor = open(FACULTY_FILE,O_RDONLY);
     offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
     if (offset == 0)
     {
@@ -900,7 +902,7 @@ int modify_student_info(int connFD){
 
     struct Student student;
     int studentID;
-    off_t offset;
+    int offset;
     int lockingStatus;
 
     writeBytes = write(connFD, ADMIN_MOD_STUDENT_ID, strlen(ADMIN_MOD_STUDENT_ID));
@@ -924,28 +926,45 @@ int modify_student_info(int connFD){
     {
         // Student File doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer,"Student id doesn't exists");
+        strcpy(writeBuffer,"Student id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
             perror("Error while writing student id doesnt exists message to client!");
             return false;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return false;
     }
     
+    offset = lseek(studentFileDescriptor,-sizeof(struct Student),SEEK_END);
+    readBytes = read(studentFileDescriptor, &student, sizeof(struct Student));
+    if (readBytes == -1)
+    {
+        perror("Error reading student record from file!");
+        return false;
+    }
+    if(studentID>student.id){
+        write(connFD,"Invalid student id ^",20);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
+    }
+    close(studentFileDescriptor);
+    
+    studentFileDescriptor = open(STUDENT_FILE,O_RDONLY); 
     offset = lseek(studentFileDescriptor, (studentID-1)* sizeof(struct Student), SEEK_SET);
     if (errno == EINVAL)
     {
         // Student record doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer,"Student id doesn't exists");
+        strcpy(writeBuffer,"Student id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
             perror("Error while writing student id doesnt exists message to client!");
             return false;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return false;
     }
     else if (offset == -1)
@@ -1001,6 +1020,7 @@ int modify_student_info(int connFD){
             perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
             return false;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return false;
     }
 
@@ -1133,6 +1153,7 @@ int modify_student_info(int connFD){
         perror("Error while writing ADMIN_MOD_STUDENT_SUCCESS message to client!");
         return false;
     }
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     return true;
 }
 
@@ -1175,7 +1196,20 @@ int modify_faculty_info(int connFD){
         }
         return false;
     }
-    
+    offset = lseek(facultyFileDescriptor,-sizeof(struct Faculty),SEEK_END);
+    readBytes = read(facultyFileDescriptor, &faculty, sizeof(struct Faculty));
+    if (readBytes == -1)
+    {
+        perror("Error reading faculty record from file!");
+        return false;
+    }
+    if(facultyID>faculty.id){
+        write(connFD,"Invalid faculty id ^",20);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
+    }
+    close(facultyFileDescriptor);
+    facultyFileDescriptor = open(FACULTY_FILE,O_RDONLY);
     offset = lseek(facultyFileDescriptor, (facultyID-1)* sizeof(struct Faculty), SEEK_SET);
     if (errno == EINVAL)
     {
@@ -1380,6 +1414,7 @@ int modify_faculty_info(int connFD){
         perror("Error while writing ADMIN_MOD_FACULTY_SUCCESS message to client!");
         return 0;
     }
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     return 1;
 }
 

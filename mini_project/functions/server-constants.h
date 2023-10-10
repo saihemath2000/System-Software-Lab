@@ -46,12 +46,12 @@
 
 #define ADMIN_MOD_STUDENT_ID "Enter student-id to modify:"
 #define ADMIN_MOD_STUDENT_MENU "Which information would you like to modify?\n1.Name 2.Age 3.Email 4.Address \nPress any other key to cancel"
-#define ERRON_INPUT_FOR_NUMBER "It seems you have entered an invalid number!\nYou'll now be redirected to the admin menu!"
+#define ERRON_INPUT_FOR_NUMBER "It seems you have entered an invalid number!\nYou'll now be redirected to the admin menu ^"
 #define ADMIN_MOD_STUDENT_NEW_NAME "What's the updated value for name?"
 #define ADMIN_MOD_STUDENT_NEW_AGE "What's the updated value for age?"
 #define ADMIN_MOD_STUDENT_NEW_EMAIL "What's the updated value for email?"
 #define ADMIN_MOD_STUDENT_NEW_ADDRESS "What's the updated value for address?"
-#define ADMIN_MOD_STUDENT_SUCCESS "The required modification was successfully made!\nYou'll now be redirected to the main menu!"
+#define ADMIN_MOD_STUDENT_SUCCESS "The required modification was successfully made!\nYou'll now be redirected to the main menu ^"
 
 #define ADMIN_MOD_FACULTY_ID "Enter faculty-id to modify:"
 #define ADMIN_MOD_FACULTY_MENU "Which information would you like to modify?\n1.Name 2.Department 3.Designation 4.Email 5.Address \nPress any other key to cancel"
@@ -60,7 +60,7 @@
 #define ADMIN_MOD_FACULTY_NEW_DESIGNATION "What's the updated value for designation?"
 #define ADMIN_MOD_FACULTY_NEW_EMAIL "What's the updated value for email?"
 #define ADMIN_MOD_FACULTY_NEW_ADDRESS "What's the updated value for address?"
-#define ADMIN_MOD_FACULTY_SUCCESS "The required modification was successfully made!\nYou'll now be redirected to the main menu!"
+#define ADMIN_MOD_FACULTY_SUCCESS "The required modification was successfully made!\nYou'll now be redirected to the main menu ^"
 #define FACULTY_LOGIN_ID_DOESNT_EXIT "loginid is not valid $"
 #define STUDENT_LOGIN_ID_DOESNT_EXIT "student loginid is not valid $"
 

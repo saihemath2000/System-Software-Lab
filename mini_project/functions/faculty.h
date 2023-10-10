@@ -373,7 +373,8 @@ int modify_course(int connFD){
         courseID = atoi(numberStart);
     }
     else{
-        write(connFD,"wrong courseid",15);
+        write(connFD,"wrong courseid ^",17);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
 
@@ -382,13 +383,14 @@ int modify_course(int connFD){
     {
         // Faculty File doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer,"course id doesn't exists");
+        strcpy(writeBuffer,"course id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
             perror("Error while writing course id doesnt exists message to client!");
             return 0;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     
@@ -397,13 +399,14 @@ int modify_course(int connFD){
     {
         // course record doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer,"Course id doesn't exists");
+        strcpy(writeBuffer,"Course id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
             perror("Error while writing course id doesnt exists message to client!");
             return 0;
         }
+        readBytes =read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     else if (offset == -1)
@@ -438,7 +441,8 @@ int modify_course(int connFD){
 
     close(courseFileDescriptor);
     if(strcmp(loggedInFaculty.loginid,course.facultyloginid)!=0){
-        write(connFD,"Not your course to modify",25);
+        write(connFD,"Not your course to modify ^",27);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     writeBytes = write(connFD, MOD_COURSE_MENU, strlen(MOD_COURSE_MENU));
@@ -518,6 +522,13 @@ int modify_course(int connFD){
             return 0;
         }
         int value = atoi(readBuffer);
+        if(value<0){
+            write(connFD,"Invalid total seats ^",21);
+            readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+            return 0;
+        }
+        if(value==0)
+           course.no_of_available_seats=0;
         if(value>noofseatsbefore){
             course.no_of_available_seats= course.no_of_available_seats+(value-noofseatsbefore);
         }
@@ -705,7 +716,8 @@ int view_offering_course(int connFD){
         
     }
     else{
-        write(connFD,"wrong courseid",15);
+        write(connFD,"wrong courseid ^",17);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     } 
     courseFileDescriptor = open(COURSE_FILE, O_RDONLY);
@@ -919,12 +931,14 @@ int change_password(int connFD){
         {
             // New & reentered passwords don't match
             writeBytes = write(connFD, PASSWORD_CHANGE_NEW_PASS_INVALID, strlen(PASSWORD_CHANGE_NEW_PASS_INVALID));
+            readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         }
     }
     else
     {
         // Password doesn't match with old password
         writeBytes = write(connFD, PASSWORD_CHANGE_OLD_PASS_INVALID, strlen(PASSWORD_CHANGE_OLD_PASS_INVALID));
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     }
 
     unlock_critical_section(&semOp);
