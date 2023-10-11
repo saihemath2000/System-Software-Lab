@@ -134,13 +134,29 @@ int drop_course(int connFD){
   close(enrollFileDescriptor);
   
   if(flag==false){
-    write(connFD,"Invalid course id ^",19);
+    // sprintf(writeBuffer,"%d",enrollID);
+    // write(connFD,writeBuffer,sizeof(writeBuffer));
+    write(connFD,"Invalid course id1 ^",20);
     readBytes = read(connFD,readBuffer,sizeof(readBuffer));
     return 0;
   } 
   
   enrollFileDescriptor = open(ENROLL_FILE,O_RDONLY);
-  int offset = lseek(enrollFileDescriptor,(enrollID-1)*sizeof(struct Enrollment),SEEK_SET);
+  int offset = lseek(enrollFileDescriptor,-sizeof(struct Enrollment),SEEK_END);
+  readBytes = read(enrollFileDescriptor, &enroll, sizeof(struct Enrollment));
+  if(readBytes == -1){
+    perror("Error reading enrollment record from file!");
+    return false;
+  }
+  if(enrollID>enroll.id){
+    write(connFD,"Invalid course id2 ^",20);
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+    return 0;
+   }
+   close(enrollFileDescriptor);
+
+  enrollFileDescriptor = open(ENROLL_FILE,O_RDONLY);
+  offset = lseek(enrollFileDescriptor,(enrollID-1)*sizeof(struct Enrollment),SEEK_SET);
   if (offset == -1){
     perror("Error while seeking to required course record!");
     return 0;
@@ -157,6 +173,11 @@ int drop_course(int connFD){
     perror("Error while reading enrollment record from the file!");
     return 0;
   }
+  if(strcmp(enroll.status,"unenrolled")==0){
+      write(connFD,"Not enrolled ^",14);
+      readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+      return 0;
+  }
   lock.l_type = F_UNLCK;
   lockingStatus = fcntl(courseFileDescriptor, F_SETLK, &lock);   
   close(enrollFileDescriptor);
@@ -168,6 +189,7 @@ int drop_course(int connFD){
         perror("Error while opening enrollment file");
         return 0;
   }
+
   offset = lseek(enrollFileDescriptor, (enrollID-1) * sizeof(struct Enrollment), SEEK_SET);
   if(offset == -1){
     perror("Error while seeking to required enrollment record!");
@@ -269,7 +291,7 @@ int view_enrolled_courses(int connFD){
     int courseFileDescriptor;
     struct Enrollment enroll;
     struct Course course;
-    bool flag=false;
+    bool flag;
     
     if(strcmp(loggedInStudent.access,"blocked")==0){
        write(connFD,"You are blocked by admin ^",26);
@@ -279,22 +301,23 @@ int view_enrolled_courses(int connFD){
 
     enrollFileDescriptor = open(ENROLL_FILE,O_RDONLY);
     while((n = read(enrollFileDescriptor, &enroll, sizeof(struct Enrollment))) > 0) {
-        if((strcmp(enroll.status,"unenrolled")!=0) && (strcmp(enroll.studentid,loggedInStudent.loginid)==0)){              
+        if((strcmp(enroll.status,"enrolled")==0) && (strcmp(enroll.studentid,loggedInStudent.loginid)==0)){              
            flag=true;
            strcpy(temp1[i],enroll.courseid);
            i++;   
         }
     }
-    if(flag!=true){
+    if(flag==false){
        write(connFD,"No enrolled courses ^",21);
        readBytes = read(connFD,readBuffer,sizeof(readBuffer));  
     }
-
+    bool magic[20]={false};
     for(int i=0;i<15;i++){
         courseFileDescriptor = open(COURSE_FILE,O_RDONLY);
         while((n = read(courseFileDescriptor, &course, sizeof(struct Course))) > 0) {
-            if((strcmp(course.status,"notactive")!=0) && (strcmp(course.courseid,temp1[i])==0)){              
-                bzero(writeBuffer,sizeof(writeBuffer));   
+            if(magic[course.id]==false && (strcmp(course.status,"notactive")!=0) && (strcmp(course.courseid,temp1[i])==0)){                 
+                bzero(writeBuffer,sizeof(writeBuffer));
+                magic[course.id]=true;   
                 sprintf(writeBuffer, " ^ ********* Course Details *********  \n\tName: %s\n\tDepartment : %s\n\tNo of Seats: %d\n\tCredits : %d\n\tNo of available seats: %d\n\tCourse-id: %s\n", course.name, course.department,course.no_of_seats,course.credits,course.no_of_available_seats,course.courseid);
                 writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
                 if(writeBytes == -1){

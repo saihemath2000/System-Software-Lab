@@ -394,6 +394,23 @@ int modify_course(int connFD){
         return 0;
     }
     
+    offset = lseek(courseFileDescriptor,-sizeof(struct Course),SEEK_END);
+    readBytes = read(courseFileDescriptor, &course, sizeof(struct Course));
+    if (readBytes == -1)
+    {
+        perror("Error reading course record from file!");
+        return false;
+    }
+    if(courseID>course.id){
+        write(connFD,"Invalid course id ^",20);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
+    }
+    close(courseFileDescriptor);
+    courseFileDescriptor = open(COURSE_FILE,O_RDONLY);
+
+
+
     offset = lseek(courseFileDescriptor, (courseID-1)* sizeof(struct Course), SEEK_SET);
     if (errno == EINVAL)
     {
@@ -427,6 +444,11 @@ int modify_course(int connFD){
 
     readBytes = read(courseFileDescriptor, &course, sizeof(struct Course));
     
+    if(strcmp(course.status,"notactive")==0){
+        write(connFD,"Invalid course id ^",20);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
+    }
     int noofavailseats = course.no_of_available_seats;
     int noofseatsbefore = course.no_of_seats;
     if (readBytes == -1)
@@ -735,7 +757,23 @@ int view_offering_course(int connFD){
         readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
-    int offset = lseek(courseFileDescriptor, (courseID-1) * sizeof(struct Course), SEEK_SET);
+
+    int offset = lseek(courseFileDescriptor,-sizeof(struct Course),SEEK_END);
+    readBytes = read(courseFileDescriptor, &fetchcourse, sizeof(struct Course));
+    if (readBytes == -1)
+    {
+        perror("Error reading course record from file!");
+        return false;
+    }
+    if(courseID>fetchcourse.id){
+        write(connFD,"Invalid course id ^",20);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
+    }
+    close(courseFileDescriptor);
+    courseFileDescriptor = open(COURSE_FILE,O_RDONLY);
+
+    offset = lseek(courseFileDescriptor, (courseID-1) * sizeof(struct Course), SEEK_SET);
     if (errno == EINVAL)
     {
         // Course record doesn't exist
