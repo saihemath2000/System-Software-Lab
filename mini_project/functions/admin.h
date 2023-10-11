@@ -483,25 +483,6 @@ int get_faculty_details(int connFD)
     close(facultyFileDescriptor);
     facultyFileDescriptor = open(FACULTY_FILE,O_RDONLY);
     offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
-    if (offset == 0)
-    {
-        // Faculty record doesn't exist
-        bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "Faculty id doesn't exists ^");
-        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-        if (writeBytes == -1)
-        {
-            perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
-            return 0;
-        }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-        return 0;
-    }
-    else if (offset == -1)
-    {
-        perror("Error while seeking to required faculty record!");
-        return false;
-    }
     lock.l_start = offset;
 
     int lockingStatus = fcntl(facultyFileDescriptor, F_SETLKW, &lock);
