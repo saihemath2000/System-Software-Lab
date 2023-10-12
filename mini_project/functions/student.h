@@ -90,7 +90,9 @@ int student_operation_handler(int connFD){
                 Logout(connFD);
                 break;    
             default:
-                return 0;
+                writeBytes = write(connFD,"wrong choice ^",14);
+                readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+                break;
             }
         }
     }
@@ -141,22 +143,22 @@ int drop_course(int connFD){
     return 0;
   } 
   
-  enrollFileDescriptor = open(ENROLL_FILE,O_RDONLY);
-  int offset = lseek(enrollFileDescriptor,-sizeof(struct Enrollment),SEEK_END);
-  readBytes = read(enrollFileDescriptor, &enroll, sizeof(struct Enrollment));
-  if(readBytes == -1){
-    perror("Error reading enrollment record from file!");
-    return false;
-  }
-  if(enrollID>enroll.id){
-    write(connFD,"Invalid course id2 ^",20);
-    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
-    return 0;
-   }
-   close(enrollFileDescriptor);
+//   enrollFileDescriptor = open(ENROLL_FILE,O_RDONLY);
+//   int offset = lseek(enrollFileDescriptor,-sizeof(struct Enrollment),SEEK_END);
+//   readBytes = read(enrollFileDescriptor, &enroll, sizeof(struct Enrollment));
+//   if(readBytes == -1){
+//     perror("Error reading enrollment record from file!");
+//     return false;
+//   }
+//   if(enrollID>enroll.id){
+//     write(connFD,"Invalid course id2 ^",20);
+//     readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+//     return 0;
+//    }
+//    close(enrollFileDescriptor);
 
   enrollFileDescriptor = open(ENROLL_FILE,O_RDONLY);
-  offset = lseek(enrollFileDescriptor,(enrollID-1)*sizeof(struct Enrollment),SEEK_SET);
+  int offset = lseek(enrollFileDescriptor,(enrollID-1)*sizeof(struct Enrollment),SEEK_SET);
   if (offset == -1){
     perror("Error while seeking to required course record!");
     return 0;

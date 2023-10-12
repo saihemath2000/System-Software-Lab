@@ -1,10 +1,24 @@
+/*
+============================================================================
+Name : admin.c
+Author : G.Sai Hemanth Kumar 
+Description : This file handles all admin functionalities of system like
+              adding student,faculty,viewing their details,modifying their
+              details 
+============================================================================
+*/
+
+
 #ifndef ADMIN_FUNCTIONS
 #define ADMIN_FUNCTIONS
 
 #include "./common.h"
 #include <regex.h>
-
+#include <string.h>
+#include <ctype.h>
 #define MAX_EMAIL_LENGTH 100
+
+
 int admin_operation_handler(int connFD);
 int add_student(int connFD);
 int get_student_details(int connFD);
@@ -18,10 +32,11 @@ int activate_student(int connFD);
 
 int admin_operation_handler(int connFD)
 {
+    // handles login of student,faculty and admin
     if(login_handler(1,connFD,NULL,NULL))
     {
-        ssize_t writeBytes, readBytes;            // Number of bytes read from / written to the client
-        char readBuffer[1000], writeBuffer[1000]; // A buffer used for reading & writing to the client
+        ssize_t writeBytes, readBytes;            
+        char readBuffer[1000], writeBuffer[1000]; 
         bzero(writeBuffer, sizeof(writeBuffer));
         strcpy(writeBuffer, LOGIN_SUCCESS);
         while (1)
@@ -73,8 +88,9 @@ int admin_operation_handler(int connFD)
                 log_out(connFD);
                 break;            
             default:
-                // writeBytes = write(connFD, ADMIN_LOGOUT, strlen(ADMIN_LOGOUT));
-                return 0;
+                writeBytes = write(connFD,"wrong choice ^",14);
+                readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+                break;
             }
         }
     }
@@ -85,6 +101,8 @@ int admin_operation_handler(int connFD)
     }
     return 1;
 }
+
+// Code for bloking student
 
 int block_student(int connFD){
     ssize_t readBytes, writeBytes;             
@@ -119,6 +137,8 @@ int block_student(int connFD){
         readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
+
+    // seeking to particular record for reading data
     studentfd = open(STUDENT_FILE,O_RDONLY);
     int offset = lseek(studentfd,(studentID-1)*sizeof(struct Student),SEEK_SET);
     if(offset == -1){
@@ -147,14 +167,17 @@ int block_student(int connFD){
     lockingStatus = fcntl(studentfd, F_SETLK, &lock);   
     close(studentfd);
 
+    // Checing whether student is already blocked or not 
     if(strcmp(student.access,"blocked")==0){
        write(connFD,"Already blocked ^",17);
        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
        return 0;
     } 
     
+    //else blocking the student
     strcpy(student.access,"blocked");
   
+    //updating the details again into the record 
     studentfd = open(STUDENT_FILE,O_WRONLY);
     if(studentfd == -1){
         perror("Error while opening student file");
@@ -165,6 +188,7 @@ int block_student(int connFD){
         perror("Error while seeking to required student record!");
         return 0;
     }
+
     lock.l_type = F_WRLCK;
     lock.l_start = offset;
     lockingStatus = fcntl(studentfd, F_SETLKW, &lock);
@@ -183,6 +207,7 @@ int block_student(int connFD){
     fcntl(studentfd, F_SETLKW, &lock);
     close(studentfd);
 
+    //displaying success message
     writeBytes = write(connFD, "student blocked successfully ^",30);
     if(writeBytes == -1){
         perror("Error while writing student block success info to client");
@@ -192,6 +217,7 @@ int block_student(int connFD){
     return 1; 
 }
 
+// Code for activating student
 int activate_student(int connFD){
     ssize_t readBytes, writeBytes;             
     char readBuffer[1000], writeBuffer[10000]; 
@@ -199,6 +225,7 @@ int activate_student(int connFD){
     struct Student student;
     int studentfd;
     struct flock lock = {F_WRLCK, SEEK_SET, 0, sizeof(struct Student), getpid()};
+    
     writeBytes = write(connFD,ENTER_ACTIVATE_ID,strlen(ENTER_ACTIVATE_ID));
     if(writeBytes==-1){
         perror("Error writing statement activate id to client");
@@ -211,13 +238,13 @@ int activate_student(int connFD){
         return 0;
     }
 
+    // fetching id from student code "ST-1..."
     char *ftPosition = strstr(readBuffer, "ST-");
     char *numberStart = NULL;
     int studentID;
 
     if(ftPosition!=NULL) {
         numberStart = ftPosition + strlen("ST-");
-        // Convert the numeric part to an integer
         studentID = atoi(numberStart);
     }
     else{
@@ -226,6 +253,7 @@ int activate_student(int connFD){
         return 0;
     }
 
+    //seeking to the record for reading details
     studentfd = open(STUDENT_FILE,O_RDONLY);
     int offset = lseek(studentfd,(studentID-1)*sizeof(struct Student),SEEK_SET);
     if(offset == -1){
@@ -254,14 +282,17 @@ int activate_student(int connFD){
     lockingStatus = fcntl(studentfd, F_SETLK, &lock);   
     close(studentfd);
 
+    // Checking whether student is already active
     if(strcmp(student.access,"granted")==0){
        write(connFD,"Already active ^",17);
        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
        return 0;
     } 
     
+    //else giving access to student
     strcpy(student.access,"granted");
   
+    //updating details back into the record
     studentfd = open(STUDENT_FILE,O_WRONLY);
     if(studentfd == -1){
         perror("Error while opening student file");
@@ -272,6 +303,7 @@ int activate_student(int connFD){
         perror("Error while seeking to required student record!");
         return 0;
     }
+
     lock.l_type = F_WRLCK;
     lock.l_start = offset;
     lockingStatus = fcntl(studentfd, F_SETLKW, &lock);
@@ -290,31 +322,33 @@ int activate_student(int connFD){
     fcntl(studentfd, F_SETLKW, &lock);
     close(studentfd);
 
+    //success message
     writeBytes = write(connFD, "Student activated successfully ^",32);
     if(writeBytes == -1){
         perror("Error while writing student activate success info to client");
         return 0;            
     }
-    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer));  //dummy read
     return 1; 
 }
 
 
 int log_out(int connFD){
-    ssize_t readBytes, writeBytes;             // Number of bytes read from / written to the socket
-    char readBuffer[1000], writeBuffer[10000]; // A buffer for reading from / writing to the socket
+    ssize_t readBytes, writeBytes;             
+    char readBuffer[1000], writeBuffer[10000]; 
     char tempBuffer[1000];
     write(connFD,LOG_OUT,strlen(LOG_OUT));
     close(connFD);
     return 0;
 
 }
+
+//Displaying student details
 int get_student_details(int connFD)
 {
-    ssize_t readBytes, writeBytes;             // Number of bytes read from / written to the socket
-    char readBuffer[1000], writeBuffer[10000]; // A buffer for reading from / writing to the socket
+    ssize_t readBytes, writeBytes;             
+    char readBuffer[1000], writeBuffer[10000]; 
     char tempBuffer[1000];
-
     struct Student fetchstudent;
     int studentFileDescriptor;
     struct flock lock = {F_RDLCK, SEEK_SET, 0, sizeof(struct Student), getpid()};
@@ -335,17 +369,20 @@ int get_student_details(int connFD)
     studentFileDescriptor = open(STUDENT_FILE, O_RDONLY);
     if (studentFileDescriptor == -1)
     {
-        // Stduent File doesn't exist
+        // Student File doesn't exist
         bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "student id doesn't exists");
+        strcpy(writeBuffer, "student id doesn't exists ^");
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
         if (writeBytes == -1)
         {
             perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
             return false;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));  //dummy read
         return 0;
     }
+
+    //checking whether our record id greater than the last record present
     int offset = lseek(studentFileDescriptor,-sizeof(struct Student),SEEK_END);
     readBytes = read(studentFileDescriptor, &fetchstudent, sizeof(struct Student));
     if (readBytes == -1)
@@ -353,6 +390,7 @@ int get_student_details(int connFD)
         perror("Error reading student record from file!");
         return false;
     }
+    //if then throw error
     if(studentID>fetchstudent.id){
         write(connFD,"Invalid student id ^",20);
         readBytes = read(connFD,readBuffer,sizeof(readBuffer));
@@ -360,6 +398,7 @@ int get_student_details(int connFD)
     }
     close(studentFileDescriptor);
 
+    // if not seek to the record and read details
     studentFileDescriptor = open(STUDENT_FILE,O_RDONLY);
     offset = lseek(studentFileDescriptor, (studentID-1) * sizeof(struct Student), SEEK_SET);
     if (errno == EINVAL)
@@ -381,8 +420,8 @@ int get_student_details(int connFD)
         perror("Error while seeking to required customer record!");
         return false;
     }
-    lock.l_start = offset;
 
+    lock.l_start = offset;
     int lockingStatus = fcntl(studentFileDescriptor, F_SETLKW, &lock);
     if (lockingStatus == -1)
     {
@@ -399,25 +438,10 @@ int get_student_details(int connFD)
 
     lock.l_type = F_UNLCK;
     fcntl(studentFileDescriptor, F_SETLK, &lock);
-
-    // if(strcmp(fetchstudent.name,"")==0){
-    //     bzero(writeBuffer, sizeof(writeBuffer));
-    //     strcpy(writeBuffer, "Student id doesn't exists ^");
-    //     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-    //     if (writeBytes == -1)
-    //     {
-    //         perror("Error while writing STUDENT_ID_DOESNT_EXIT message to client!");
-    //         return 0;
-    //     }
-    //     readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-    //     return 0;
-    // }  
-
     bzero(writeBuffer, sizeof(writeBuffer));
-    sprintf(writeBuffer, "********* Student Details *********  \n\tName: %s\n\tAge : %d\n\tEmail : %s\n\tAddress: %s\n\tLogin-id: %s", fetchstudent.name, fetchstudent.age,fetchstudent.email,fetchstudent.address,fetchstudent.loginid);
 
+    sprintf(writeBuffer, "********* Student Details *********  \n\tName: %s\n\tAge : %d\n\tEmail : %s\n\tAddress: %s\n\tLogin-id: %s", fetchstudent.name, fetchstudent.age,fetchstudent.email,fetchstudent.address,fetchstudent.loginid);
     strcat(writeBuffer, "\n\nYou'll now be redirected to the Admin menu ^ \n");
-    // strcat(writeBuffer," ^");
 
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
@@ -425,17 +449,17 @@ int get_student_details(int connFD)
         perror("Error writing student info to client!");
         return false;
     }
-    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer)); //dummy read
 
     return true;
 }
 
+// Viewing faculty details
 int get_faculty_details(int connFD)
 {
-    ssize_t readBytes, writeBytes;             // Number of bytes read from / written to the socket
-    char readBuffer[1000], writeBuffer[10000]; // A buffer for reading from / writing to the socket
+    ssize_t readBytes, writeBytes;             
+    char readBuffer[1000], writeBuffer[10000]; 
     char tempBuffer[1000];
-
     struct Faculty fetchfaculty;
     int facultyFileDescriptor;
     struct flock lock = {F_RDLCK, SEEK_SET, 0, sizeof(struct Faculty), getpid()};
@@ -468,6 +492,8 @@ int get_faculty_details(int connFD)
         readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
+
+    // checking our record id is greater than the last record id present
     int offset = lseek(facultyFileDescriptor,-sizeof(struct Faculty),SEEK_END);
     readBytes = read(facultyFileDescriptor, &fetchfaculty, sizeof(struct Faculty));
     if (readBytes == -1)
@@ -475,12 +501,16 @@ int get_faculty_details(int connFD)
         perror("Error reading faculty record from file!");
         return false;
     }
+
+    // if then throw error 
     if(facultyID>fetchfaculty.id){
         write(connFD,"Invalid faculty id ^",20);
         readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     close(facultyFileDescriptor);
+    
+    // else seek to the record for reading details
     facultyFileDescriptor = open(FACULTY_FILE,O_RDONLY);
     offset = lseek(facultyFileDescriptor, (facultyID-1) * sizeof(struct Faculty), SEEK_SET);
     lock.l_start = offset;
@@ -501,22 +531,9 @@ int get_faculty_details(int connFD)
 
     lock.l_type = F_UNLCK;
     fcntl(facultyFileDescriptor, F_SETLK, &lock);
-
-    if(strcmp(fetchfaculty.name,"")==0){
-        bzero(writeBuffer, sizeof(writeBuffer));
-        strcpy(writeBuffer, "Faculty id doesn't exists ^");
-        writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
-        if (writeBytes == -1)
-        {
-            perror("Error while writing FACULTY_ID_DOESNT_EXIT message to client!");
-            return 0;
-        }
-        readBytes = read(connFD, readBuffer, sizeof(readBuffer)); // Dummy read
-        return 0;
-    }
     bzero(writeBuffer, sizeof(writeBuffer));
-    sprintf(writeBuffer, "********* Faculty Details *********  \n\tName: %s\n\tDepartment : %s\n\tDesignation: %s\n\tEmail : %s\n\tAddress: %s\n\tLogin-id: %s", fetchfaculty.name, fetchfaculty.department,fetchfaculty.designation,fetchfaculty.email,fetchfaculty.address,fetchfaculty.loginid);
 
+    sprintf(writeBuffer, "********* Faculty Details *********  \n\tName: %s\n\tDepartment : %s\n\tDesignation: %s\n\tEmail : %s\n\tAddress: %s\n\tLogin-id: %s", fetchfaculty.name, fetchfaculty.department,fetchfaculty.designation,fetchfaculty.email,fetchfaculty.address,fetchfaculty.loginid);
     strcat(writeBuffer, "\n\nYou'll now be redirected to the Admin menu... ^ ");
 
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
@@ -525,21 +542,22 @@ int get_faculty_details(int connFD)
         perror("Error writing faculty info to client!");
         return 0;
     }
-    read(connFD,readBuffer,sizeof(readBuffer));
+    read(connFD,readBuffer,sizeof(readBuffer)); //dummy read
+    
     return 1;
 }
 
+// adding student details
 int add_student(int connFD)
 {
     ssize_t readBytes, writeBytes;
     char readBuffer[1000], writeBuffer[1000];
-
     struct Student newStudent, previousStudent;
 
     int studentFileDescriptor = open(STUDENT_FILE, O_RDONLY);
     if (studentFileDescriptor == -1 && errno == ENOENT)
     {
-        // Customer file was never created
+        // Student file was never created
         newStudent.id = 1;
     }
     else if (studentFileDescriptor == -1)
@@ -573,11 +591,11 @@ int add_student(int connFD)
 
         lock.l_type = F_UNLCK;
         fcntl(studentFileDescriptor, F_SETLK, &lock);
-
         close(studentFileDescriptor);
 
         newStudent.id = previousStudent.id + 1;
     }
+
     //Enter your name:
     writeBytes = write(connFD, ADD_NAME,strlen(ADD_NAME));
     if (writeBytes == -1)
@@ -592,6 +610,15 @@ int add_student(int connFD)
     {
         perror("Error reading name response from client!");
         return false;
+    }
+ 
+    //validation for name
+    for(int i = 0;readBuffer[i]!='\0';i++) {
+        if(!isalpha(readBuffer[i]) && !isspace(readBuffer[i])) {
+            write(connFD,"Invalid name ^",14);
+            readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+            return 0;
+        }
     }
     strcpy(newStudent.name,readBuffer);
 
@@ -609,7 +636,16 @@ int add_student(int connFD)
         perror("Error reading age response from client!");
         return false;
     }
-    newStudent.age=atoi(readBuffer);
+    int var=atoi(readBuffer);
+    
+    //checking for wrong age
+    if(var<=0){
+        write(connFD,"Invalid age ^",13);
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
+    }
+     
+    newStudent.age=var;
 
     // Enter address:
     writeBytes = write(connFD, ADD_ADDRESS,strlen(ADD_ADDRESS));
@@ -641,8 +677,9 @@ int add_student(int connFD)
         perror("Error reading email response from client!");
         return false;
     }
+    
+    //validation for email
     const char *pattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}$";
-
     regex_t regex;
     if (regcomp(&regex, pattern, REG_EXTENDED) != 0) {
         return false; // Regular expression compilation failed
@@ -671,6 +708,7 @@ int add_student(int connFD)
     strcpy(hashedPassword, crypt(AUTOGEN_PASSWORD, SALT_BAE));
     strcpy(newStudent.password, hashedPassword);
 
+    //creating record in file
     studentFileDescriptor = open(STUDENT_FILE, O_CREAT|O_APPEND|O_WRONLY,S_IRWXU);
      if (studentFileDescriptor == -1)
      {
@@ -685,6 +723,8 @@ int add_student(int connFD)
     }
     close(studentFileDescriptor);
     bzero(writeBuffer, sizeof(writeBuffer));
+
+    //Displaying login id 
     sprintf(writeBuffer, "%s%s\n", ADMIN_ADD_STUDENT_AUTOGEN_LOGIN,newStudent.loginid);
     strcat(writeBuffer, "^");
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
@@ -693,21 +733,21 @@ int add_student(int connFD)
         perror("Error displaying login details");
         return 0;
     }
-    readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+    readBytes = read(connFD,readBuffer,sizeof(readBuffer)); //dummy read
     return newStudent.id;
 }
 
+// Viewing facutly details
 int add_faculty(int connFD)
 {
     ssize_t readBytes, writeBytes;
     char readBuffer[1000], writeBuffer[1000];
-
     struct Faculty newFaculty, previousFaculty;
 
     int facultyFileDescriptor = open(FACULTY_FILE, O_RDONLY);
     if (facultyFileDescriptor == -1 && errno == ENOENT)
     {
-        // Customer file was never created
+        // Facutly file was never created
         newFaculty.id = 1;
     }
     else if (facultyFileDescriptor == -1)
@@ -740,11 +780,11 @@ int add_faculty(int connFD)
 
         lock.l_type = F_UNLCK;
         fcntl(facultyFileDescriptor, F_SETLK, &lock);
-
         close(facultyFileDescriptor);
 
         newFaculty.id = previousFaculty.id + 1;
     }
+
     //Enter your name:
     writeBytes = write(connFD, ADD_NAME,strlen(ADD_NAME));
     if (writeBytes == -1)
@@ -760,6 +800,16 @@ int add_faculty(int connFD)
         perror("Error reading name response from client!");
         return false;
     }
+    
+    //validation for name
+    for(int i = 0;readBuffer[i]!='\0';i++) {
+        if(!isalpha(readBuffer[i]) && !isspace(readBuffer[i])) {
+            write(connFD,"Invalid name ^",14);
+            readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+            return 0;
+        }
+    }
+    
     strcpy(newFaculty.name,readBuffer);
     
     
@@ -776,8 +826,18 @@ int add_faculty(int connFD)
         perror("Error reading department response from client!");
         return false;
     }
-    strcpy(newFaculty.department,readBuffer);
 
+    //validation for department
+    for(int i = 0;readBuffer[i]!='\0';i++) {
+        if(!isalpha(readBuffer[i]) && !isspace(readBuffer[i])) {
+            write(connFD,"Invalid dept ^",14);
+            readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+            return 0;
+        }
+    }
+
+    strcpy(newFaculty.department,readBuffer);
+ 
     // Enter Designation:
     writeBytes = write(connFD,ENTER_DESIGNATION,strlen(ENTER_DESIGNATION));
     if(writeBytes==-1){
@@ -791,6 +851,16 @@ int add_faculty(int connFD)
         perror("Error reading designation response from client!");
         return false;
     }
+    
+    //validation for designation
+    for(int i = 0;readBuffer[i]!='\0';i++) {
+        if(!isalpha(readBuffer[i]) && !isspace(readBuffer[i])) {
+            write(connFD,"Invalid designation ^",21);
+            readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+            return 0;
+        }
+    }
+
     strcpy(newFaculty.designation,readBuffer);
 
    // Enter email:
@@ -807,8 +877,9 @@ int add_faculty(int connFD)
         perror("Error reading email response from client!");
         return false;
     }
-    const char *pattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}$";
 
+    // validation for email
+    const char *pattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}$";
     regex_t regex;
     if (regcomp(&regex, pattern, REG_EXTENDED) != 0) {
         return false; // Regular expression compilation failed
@@ -847,10 +918,12 @@ int add_faculty(int connFD)
     sprintf(writeBuffer, "%d", newFaculty.id);
     strcat(newFaculty.loginid, writeBuffer);
 
+    //hashing password using crypt
     char hashedPassword[1000];
     strcpy(hashedPassword, crypt(AUTOGEN_PASSWORD, SALT_BAE));
     strcpy(newFaculty.password, hashedPassword);
 
+    //creating record in a file
     facultyFileDescriptor = open(FACULTY_FILE, O_CREAT|O_APPEND|O_WRONLY,S_IRWXU);
     if (facultyFileDescriptor == -1)
      {
@@ -864,23 +937,27 @@ int add_faculty(int connFD)
         return 0;
     }
     bzero(writeBuffer, sizeof(writeBuffer));
+
+    // displaying login id
     sprintf(writeBuffer, "%s%s\n", ADMIN_ADD_FACULTY_AUTOGEN_LOGIN,newFaculty.loginid);
     strcat(writeBuffer,"^");
+    
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
     {
         perror("Error displaying login details");
         return 0;
     }
-    read(connFD,readBuffer,sizeof(readBuffer));
+    read(connFD,readBuffer,sizeof(readBuffer)); //dummy read
+    
     close(facultyFileDescriptor);
     return newFaculty.id;
 }
 
+// modifying student details
 int modify_student_info(int connFD){
     ssize_t readBytes, writeBytes;
     char readBuffer[1000], writeBuffer[1000];
-
     struct Student student;
     int studentID;
     int offset;
@@ -918,6 +995,7 @@ int modify_student_info(int connFD){
         return false;
     }
     
+    // checking whether our record id is greater then the last record id present
     offset = lseek(studentFileDescriptor,-sizeof(struct Student),SEEK_END);
     readBytes = read(studentFileDescriptor, &student, sizeof(struct Student));
     if (readBytes == -1)
@@ -925,6 +1003,7 @@ int modify_student_info(int connFD){
         perror("Error reading student record from file!");
         return false;
     }
+    // if then throw error
     if(studentID>student.id){
         write(connFD,"Invalid student id ^",20);
         readBytes = read(connFD,readBuffer,sizeof(readBuffer));
@@ -932,6 +1011,7 @@ int modify_student_info(int connFD){
     }
     close(studentFileDescriptor);
     
+    // else seek to the record for reading details
     studentFileDescriptor = open(STUDENT_FILE,O_RDONLY); 
     offset = lseek(studentFileDescriptor, (studentID-1)* sizeof(struct Student), SEEK_SET);
     if (errno == EINVAL)
@@ -977,6 +1057,7 @@ int modify_student_info(int connFD){
 
     close(studentFileDescriptor);
 
+    //displaying student menu
     writeBytes = write(connFD, ADMIN_MOD_STUDENT_MENU, strlen(ADMIN_MOD_STUDENT_MENU));
     if (writeBytes == -1)
     {
@@ -991,8 +1072,10 @@ int modify_student_info(int connFD){
     }
 
     int choice = atoi(readBuffer);
+
+    // validation for non numeric input
     if (choice == 0)
-    { // A non-numeric string was passed to atoi
+    { 
         bzero(writeBuffer, sizeof(writeBuffer));
         strcpy(writeBuffer, ERRON_INPUT_FOR_NUMBER);
         writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
@@ -1006,8 +1089,10 @@ int modify_student_info(int connFD){
     }
 
     bzero(readBuffer, sizeof(readBuffer));
-    switch (choice)
-    {
+    
+    switch (choice){
+     
+    // new name 
     case 1:
         writeBytes = write(connFD, ADMIN_MOD_STUDENT_NEW_NAME, strlen(ADMIN_MOD_STUDENT_NEW_NAME));
         if (writeBytes == -1)
@@ -1021,8 +1106,19 @@ int modify_student_info(int connFD){
             perror("Error while getting response for student's new name from client!");
             return false;
         }
+        //validation for name
+        for(int i = 0;readBuffer[i]!='\0';i++) {
+           if(!isalpha(readBuffer[i]) && !isspace(readBuffer[i])) {
+              write(connFD,"Invalid name ^",14);
+              readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+              return 0;
+            }
+        }
+
         strcpy(student.name, readBuffer);
         break;
+    
+    // new age
     case 2:
         writeBytes = write(connFD, ADMIN_MOD_STUDENT_NEW_AGE, strlen(ADMIN_MOD_STUDENT_NEW_AGE));
         if (writeBytes == -1)
@@ -1037,9 +1133,11 @@ int modify_student_info(int connFD){
             return false;
         }
         int updatedAge = atoi(readBuffer);
+        
+        //validation for age
         if (updatedAge == 0)
         {
-            // Either client has sent age as 0 (which is invalid) or has entered a non-numeric string
+            
             bzero(writeBuffer, sizeof(writeBuffer));
             strcpy(writeBuffer, ERRON_INPUT_FOR_NUMBER);
             writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
@@ -1052,6 +1150,8 @@ int modify_student_info(int connFD){
         }
         student.age = updatedAge;
         break;
+    
+    // new emailid
     case 3:
         writeBytes = write(connFD, ADMIN_MOD_STUDENT_NEW_EMAIL, strlen(ADMIN_MOD_STUDENT_NEW_EMAIL));
         if (writeBytes == -1)
@@ -1065,8 +1165,26 @@ int modify_student_info(int connFD){
             perror("Error while getting response for student's new email from client!");
             return false;
         }
+        
+        //validation for email
+        const char *pattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}$";
+        regex_t regex;
+        if (regcomp(&regex, pattern, REG_EXTENDED) != 0) {
+           return false; // Regular expression compilation failed
+        }
+        int result;
+        result = regexec(&regex,readBuffer,0, NULL, 0);
+        regfree(&regex);
+        if(result!=0) {
+            write(connFD,"Invalid emailid ^",17);
+            readBytes= read(connFD,readBuffer,sizeof(readBuffer)); //dummy read
+            return 0; 
+        } 
+
         strcpy(student.email, readBuffer);
         break;
+
+    // new address    
     case 4:
         writeBytes = write(connFD, ADMIN_MOD_STUDENT_NEW_ADDRESS, strlen(ADMIN_MOD_STUDENT_NEW_ADDRESS));
         if (writeBytes == -1)
@@ -1092,9 +1210,12 @@ int modify_student_info(int connFD){
             perror("Error while writing INVALID_MENU_CHOICE message to client!");
             return false;
         }
+
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer)); //dummy read
         return false;
     }
 
+    //updating details of record into file
     studentFileDescriptor = open(STUDENT_FILE, O_WRONLY);
     if (studentFileDescriptor == -1)
     {
@@ -1128,6 +1249,7 @@ int modify_student_info(int connFD){
 
     close(studentFileDescriptor);
 
+    //success message
     writeBytes = write(connFD, ADMIN_MOD_STUDENT_SUCCESS, strlen(ADMIN_MOD_STUDENT_SUCCESS));
     if (writeBytes == -1)
     {
@@ -1138,10 +1260,10 @@ int modify_student_info(int connFD){
     return true;
 }
 
+// modifying student details
 int modify_faculty_info(int connFD){
     ssize_t readBytes, writeBytes;
     char readBuffer[1000], writeBuffer[1000];
-
     struct Faculty faculty;
     int facultyID;
     off_t offset;
@@ -1177,6 +1299,8 @@ int modify_faculty_info(int connFD){
         }
         return false;
     }
+
+    //checking whether our record id is greater than the id of last record
     offset = lseek(facultyFileDescriptor,-sizeof(struct Faculty),SEEK_END);
     readBytes = read(facultyFileDescriptor, &faculty, sizeof(struct Faculty));
     if (readBytes == -1)
@@ -1184,12 +1308,16 @@ int modify_faculty_info(int connFD){
         perror("Error reading faculty record from file!");
         return false;
     }
+
+    // if then throw error
     if(facultyID>faculty.id){
         write(connFD,"Invalid faculty id ^",20);
         readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
     close(facultyFileDescriptor);
+
+    //else seek the record to read the details
     facultyFileDescriptor = open(FACULTY_FILE,O_RDONLY);
     offset = lseek(facultyFileDescriptor, (facultyID-1)* sizeof(struct Faculty), SEEK_SET);
     if (errno == EINVAL)
@@ -1234,6 +1362,7 @@ int modify_faculty_info(int connFD){
 
     close(facultyFileDescriptor);
 
+    //displaying faculty menu
     writeBytes = write(connFD, ADMIN_MOD_FACULTY_MENU, strlen(ADMIN_MOD_FACULTY_MENU));
     if (writeBytes == -1)
     {
@@ -1248,6 +1377,8 @@ int modify_faculty_info(int connFD){
     }
 
     int choice = atoi(readBuffer);
+
+    //validation of choice
     if (choice == 0)
     { // A non-numeric string was passed to atoi
         bzero(writeBuffer, sizeof(writeBuffer));
@@ -1260,10 +1391,11 @@ int modify_faculty_info(int connFD){
         }
         return 0;
     }
-
     bzero(readBuffer, sizeof(readBuffer));
-    switch (choice)
-    {
+    
+    switch (choice){
+
+    // new name    
     case 1:
         writeBytes = write(connFD, ADMIN_MOD_FACULTY_NEW_NAME, strlen(ADMIN_MOD_FACULTY_NEW_NAME));
         if (writeBytes == -1)
@@ -1277,8 +1409,20 @@ int modify_faculty_info(int connFD){
             perror("Error while getting response for faculty's new name from client!");
             return false;
         }
+        
+        //validation for name
+        for(int i = 0;readBuffer[i]!='\0';i++) {
+           if(!isalpha(readBuffer[i]) && !isspace(readBuffer[i])) {
+              write(connFD,"Invalid name ^",14);
+              readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+              return 0;
+            }
+        }
+
         strcpy(faculty.name, readBuffer);
         break;
+
+    // new dept    
     case 2:
         writeBytes = write(connFD, ADMIN_MOD_FACULTY_NEW_DEPARTMENT, strlen(ADMIN_MOD_FACULTY_NEW_DEPARTMENT));
         if (writeBytes == -1)
@@ -1293,9 +1437,18 @@ int modify_faculty_info(int connFD){
             return false;
         }
         
+        //validation for name
+        for(int i = 0;readBuffer[i]!='\0';i++) {
+           if(!isalpha(readBuffer[i]) && !isspace(readBuffer[i])) {
+              write(connFD,"Invalid dept ^",14);
+              readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+              return 0;
+            }
+        }
         strcpy(faculty.department,readBuffer);
         break;
 
+    // new designation 
     case 3:
         writeBytes = write(connFD, ADMIN_MOD_FACULTY_NEW_DESIGNATION, strlen(ADMIN_MOD_FACULTY_NEW_DESIGNATION));
         if (writeBytes == -1)
@@ -1309,9 +1462,19 @@ int modify_faculty_info(int connFD){
             perror("Error while getting response for faculty's new designation from client!");
             return false;
         }
+
+        //validation for designation
+        for(int i = 0;readBuffer[i]!='\0';i++) {
+           if(!isalpha(readBuffer[i]) && !isspace(readBuffer[i])) {
+              write(connFD,"Invalid designation ^",22);
+              readBytes= read(connFD,readBuffer,sizeof(readBuffer));
+              return 0;
+            }
+        }
         strcpy(faculty.designation, readBuffer);
         break;
 
+    // new email
     case 4:
         writeBytes = write(connFD, ADMIN_MOD_FACULTY_NEW_EMAIL, strlen(ADMIN_MOD_FACULTY_NEW_EMAIL));
         if (writeBytes == -1)
@@ -1325,9 +1488,26 @@ int modify_faculty_info(int connFD){
             perror("Error while getting response for faculty's new email from client!");
             return false;
         }
+        
+        //validation for email
+        const char *pattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}$";
+        regex_t regex;
+        if (regcomp(&regex, pattern, REG_EXTENDED) != 0) {
+           return false; // Regular expression compilation failed
+        }
+        int result;
+        result = regexec(&regex,readBuffer,0, NULL, 0);
+        regfree(&regex);
+        if(result!=0) {
+            write(connFD,"Invalid emailid ^",17);
+            readBytes= read(connFD,readBuffer,sizeof(readBuffer)); //dummy read
+            return 0; 
+        } 
+
         strcpy(faculty.email, readBuffer);
         break;
 
+    // new address
     case 5:
         writeBytes = write(connFD, ADMIN_MOD_FACULTY_NEW_ADDRESS, strlen(ADMIN_MOD_FACULTY_NEW_ADDRESS));
         if (writeBytes == -1)
@@ -1344,6 +1524,7 @@ int modify_faculty_info(int connFD){
         strcpy(faculty.address, readBuffer);
         break;    
 
+
     default:
         bzero(writeBuffer, sizeof(writeBuffer));
         strcpy(writeBuffer, INVALID_MENU_CHOICE);
@@ -1353,9 +1534,11 @@ int modify_faculty_info(int connFD){
             perror("Error while writing INVALID_MENU_CHOICE message to client!");
             return 0;
         }
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
         return 0;
     }
 
+    //updating the record into file
     facultyFileDescriptor = open(FACULTY_FILE, O_WRONLY);
     if (facultyFileDescriptor == -1)
     {
@@ -1389,6 +1572,7 @@ int modify_faculty_info(int connFD){
 
     close(facultyFileDescriptor);
 
+    //sucess message
     writeBytes = write(connFD, ADMIN_MOD_FACULTY_SUCCESS, strlen(ADMIN_MOD_FACULTY_SUCCESS));
     if (writeBytes == -1)
     {

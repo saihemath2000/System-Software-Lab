@@ -1,3 +1,13 @@
+/*
+============================================================================
+Name : server.c
+Author : G.Sai Hemanth Kumar 
+Description : This file consists of code which listens for client connections
+              and connect to it through socket. Used forking for handling multiple clients  
+============================================================================
+*/
+
+
 #include<stdio.h>
 #include<sys/socket.h>
 #include<netinet/in.h>
@@ -9,12 +19,15 @@
 #include "./functions/faculty.h"
 #include "./functions/student.h"
 
+
+// function which handles client requests
 int handle_client(int client_socket,int i) {
     int userchoice;
     char received[1000];
     char response[1024];
     int bytes_received;
     
+    //displaying intial prompt
     write(client_socket,INITIAL_PROMPT,strlen(INITIAL_PROMPT));
     bzero(received,sizeof(received));
     bytes_received = read(client_socket,received,sizeof(received));
@@ -38,7 +51,9 @@ int handle_client(int client_socket,int i) {
                 student_operation_handler(client_socket);
                 break;         
         default:
-                // Exit
+                write(client_socket,"wrong choice ^",14);
+                char readBuffer[100];
+                int readBytes = read(client_socket,readBuffer,sizeof(readBuffer));
                 break;
        }
     }    

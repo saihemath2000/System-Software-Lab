@@ -1,5 +1,15 @@
+/*
+============================================================================
+Name : client.c
+Author : G.Sai Hemanth Kumar 
+Description : This file consists of client code which connects to the server
+              and give inputs for further processing   
+============================================================================
+*/
+
+
 #include <sys/socket.h> 
-#include <netinet/ip.h> // Import for `struct sockaddr_in`, `htons`
+#include <netinet/ip.h> 
 #include <stdio.h>      
 #include <unistd.h>
 #include <string.h>  
@@ -14,6 +24,7 @@ void main(){
     ssize_t readBytes, writeBytes;
     char dataFromServer[1024];
     int choice;
+
     // Create an endpoint for communicate -> here, create the client side point
     // Create a socket for TCP connection using IPv4
     socketFileDescriptor = socket(AF_INET, SOCK_STREAM, 0);
@@ -41,15 +52,15 @@ void main(){
 
 int connection_handler(int sockFD)
 {
-    char readBuffer[1000], writeBuffer[1000]; // A buffer used for reading from / writting to the server
-    ssize_t readBytes, writeBytes;            // Number of bytes read from / written to the socket
-
+    char readBuffer[1000], writeBuffer[1000]; 
+    ssize_t readBytes, writeBytes;           
     char tempBuffer[1000];
 
     do
     {
         bzero(readBuffer, sizeof(readBuffer)); // Empty the read buffer
         bzero(tempBuffer, sizeof(tempBuffer));
+        
         readBytes = read(sockFD, readBuffer, sizeof(readBuffer));
         if (readBytes == -1)
             perror("Error while reading from client socket!");

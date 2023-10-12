@@ -1,3 +1,14 @@
+/*
+============================================================================
+Name : common.h
+Author : G.Sai Hemanth Kumar 
+Description : This file consists of common login function which handles
+              whether the credentials are correct or wrong of admin,student
+              and faculty    
+============================================================================
+*/
+
+
 #include <stdio.h>     
 #include <unistd.h>    
 #include <string.h>    
@@ -18,6 +29,7 @@
 
 bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID, struct Student *ptrToStudentID);
 
+// login handling function
 bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct Student *ptrToStudentID)
 {
     ssize_t readBytes, writeBytes;            
@@ -25,15 +37,14 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct S
     char tempBuffer[1000];
     struct Faculty faculty;
     struct Student student;
-
     int ID;
 
     bzero(readBuffer, sizeof(readBuffer));
     bzero(writeBuffer, sizeof(writeBuffer));
-
     strcat(writeBuffer, "\n");
     strcat(writeBuffer, LOGIN_ID);
 
+    //displaying enter loginid message
     writeBytes = write(connFD, writeBuffer, strlen(writeBuffer));
     if (writeBytes == -1)
     {
@@ -50,21 +61,26 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct S
 
     bool userFound = false;
 
+    // if user is admin 
     if (user==1)
     {
+        // if loginid matches
         if (strcmp(readBuffer, ADMIN_LOGIN_ID) == 0)
-            userFound = true;
+            userFound = true;    
     }
+
+    // if user if faculty
     else if(user==2)
     {
+
         bzero(tempBuffer, sizeof(tempBuffer));
         strcpy(tempBuffer, readBuffer);
         int id;
+
+        //retreiving id from FT-""
         char *numberStart = NULL;
-        // Find the position of "FT-" in the string
         char *ftPosition = strstr(tempBuffer,"FT-");
         if (ftPosition != NULL) {
-           // Move the pointer to the character right after "FT-"
            numberStart = ftPosition + strlen("FT-");
            id = atoi(numberStart);
         } 
@@ -76,6 +92,7 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct S
             return false;
         }
 
+        //seeking to the particular record of faculty
         off_t offset = lseek(facultyFileFD,(id-1) * sizeof(struct Faculty), SEEK_SET);
         if (offset >= 0)
         {
@@ -104,19 +121,22 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct S
         }
         else
         {
+            // if login id is not valid
             writeBytes = write(connFD, FACULTY_LOGIN_ID_DOESNT_EXIT, strlen(FACULTY_LOGIN_ID_DOESNT_EXIT));
         }
     }
+
+    //if user is student
     else if(user==3){
 
         bzero(tempBuffer, sizeof(tempBuffer));
         strcpy(tempBuffer, readBuffer);
         int id;
+
         char *numberStart = NULL;
-        // Find the position of "ST-" in the string
+        
         char *ftPosition = strstr(tempBuffer,"ST-");
         if (ftPosition != NULL) {
-           // Move the pointer to the character right after "ST-"
            numberStart = ftPosition + strlen("ST-");
            id = atoi(numberStart);
         } 
@@ -128,6 +148,7 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct S
             return 0;
         }
 
+        //seeking to student record
         off_t offset = lseek(studentFileFD,(id-1) * sizeof(struct Student), SEEK_SET);
         if (offset >= 0)
         {
@@ -156,12 +177,16 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct S
         }
         else
         {
+            // if student login id doesnt exists
             writeBytes = write(connFD, STUDENT_LOGIN_ID_DOESNT_EXIT, strlen(STUDENT_LOGIN_ID_DOESNT_EXIT));
         }
     }
+
     if(userFound)
     {
         bzero(writeBuffer, sizeof(writeBuffer));
+       
+        //displaying message to enter password
         writeBytes = write(connFD, PASSWORD, strlen(PASSWORD));
         if (writeBytes == -1)
         {
@@ -179,12 +204,14 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct S
         strcpy(hashedPassword, crypt(readBuffer, SALT_BAE));
         if (user==1)
         {
+            // if admin password matches
             if (strcmp(readBuffer, ADMIN_PASSWORD) == 0)
                 return true;
         }
         else if(user==2)
         {
             //66pXmLtsArbAk --->shinchannobitha
+            // if faculty password matches
             if (strcmp(hashedPassword, faculty.password) == 0)
             {
                 *ptrToFacultyID = faculty;
@@ -192,20 +219,25 @@ bool login_handler(int user, int connFD, struct Faculty *ptrToFacultyID,struct S
             }
         }
         else{
+            // if student password matches
             if (strcmp(hashedPassword, student.password) == 0)
             {
                 *ptrToStudentID = student;
                 return true;
             }
         }
-
-        bzero(writeBuffer, sizeof(writeBuffer));
+         
+        bzero(writeBuffer, sizeof(writeBuffer));        
         writeBytes = write(connFD, INVALID_PASSWORD, strlen(INVALID_PASSWORD));
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
     }
     else
     {
         bzero(writeBuffer, sizeof(writeBuffer));
         writeBytes = write(connFD, INVALID_LOGIN, strlen(INVALID_LOGIN));
+        readBytes = read(connFD,readBuffer,sizeof(readBuffer));
+        return 0;
     }
 
     return false;

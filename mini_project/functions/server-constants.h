@@ -1,3 +1,12 @@
+/*
+============================================================================
+Name : server-constants.h
+Author : G.Sai Hemanth Kumar 
+Description : This file consists of all constants we use while displaying messages
+============================================================================
+*/
+
+
 #define INITIAL_PROMPT "\t.......... Welcome Back To Academia :: Course Registration..........\nLogin Type\nEnter Your Choice {1.Admin, 2.Faculty, 3.Student}:"
 #define LOGIN_SUCCESS "\nLogin Successful!\n"
 #define ADMIN_MENU "......Welcome to Admin Menu......\n\t1.Add Student\n\t2.View Student Details\n\t3.Add Faculty\n\t4.View Faculty Details\n\t5.Activate Student\n\t6.Block Student\n\t7.Modify Student Details\n\t8.Modify Faculty Details\n\t9.Logout and Exit\n\nChoose option:"
@@ -28,8 +37,8 @@
 #define GET_COURSE_ID  "Enter course id:"
 
 #define PASSWORD "\nEnter password #"
-#define INVALID_LOGIN "The login ID specified doesn't exist!$"
-#define INVALID_PASSWORD "The password specified doesn't match!$"
+#define INVALID_LOGIN "The login ID specified doesn't exist ^"
+#define INVALID_PASSWORD "The password specified doesn't match ^"
 
 #define LOG_OUT "You have been logged out ^"
 
@@ -84,5 +93,5 @@
 #define PASSWORD_CHANGE_NEW_PASS_INVALID "The new password and the reentered passwords don't seem to match ^"
 #define PASSWORD_CHANGE_OLD_PASS_INVALID "The entered password doesn't seem to match with the old password ^"
 
-#define INVALID_MENU_CHOICE "It seems you've made an invalid menu choice\nYou'll now be redirected to the main menu!"
+#define INVALID_MENU_CHOICE "It seems you've made an invalid menu choice\nYou'll now be redirected to the main menu ^"
 #define SALT_BAE "666"
