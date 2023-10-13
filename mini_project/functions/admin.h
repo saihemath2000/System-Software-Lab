@@ -1146,6 +1146,7 @@ int modify_student_info(int connFD){
                 perror("Error while writing ERRON_INPUT_FOR_NUMBER message to client!");
                 return false;
             }
+            readBytes = read(connFD,readBuffer,sizeof(readBuffer));
             return false;
         }
         student.age = updatedAge;
